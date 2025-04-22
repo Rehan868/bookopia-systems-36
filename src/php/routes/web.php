@@ -41,6 +41,8 @@ Route::middleware(['auth', 'staff'])->group(function () {
     
     // Profile
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
+    Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password');
     
     // Search
     Route::get('/search', [SearchController::class, 'index'])->name('search');
@@ -117,6 +119,9 @@ Route::middleware(['auth', 'staff'])->group(function () {
 // Protected Routes for Owners
 Route::middleware(['auth', 'owner'])->prefix('owner')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'ownerDashboard'])->name('owner.dashboard');
+    Route::get('/profile', [AuthController::class, 'profile'])->name('owner.profile');
+    Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('owner.profile.update');
+    Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('owner.profile.password');
     Route::get('/bookings', [BookingController::class, 'ownerIndex'])->name('owner.bookings.index');
     Route::get('/availability', [RoomController::class, 'ownerAvailability'])->name('owner.availability');
     Route::get('/cleaning', [CleaningController::class, 'ownerIndex'])->name('owner.cleaning.index');
