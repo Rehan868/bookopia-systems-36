@@ -36,8 +36,7 @@ Route::get('/owner/login', [AuthController::class, 'showOwnerLoginForm'])->name(
 
 // Protected Routes for Staff
 Route::middleware(['auth', 'staff'])->group(function () {
-    // Dashboard
-    Route::get('/', [StaffController::class, 'dashboard'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     // Profile
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
@@ -48,26 +47,16 @@ Route::middleware(['auth', 'staff'])->group(function () {
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     
     // Bookings
-    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
-    Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
-    Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
-    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
-    Route::get('/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
-    Route::put('/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update');
-    Route::post('/bookings/{booking}/check-in', [BookingController::class, 'checkIn'])->name('bookings.check-in');
-    Route::post('/bookings/{booking}/check-out', [BookingController::class, 'checkOut'])->name('bookings.check-out');
+    Route::resource('bookings', BookingController::class);
+    Route::post('bookings/{booking}/check-in', [BookingController::class, 'checkIn'])->name('bookings.check-in');
+    Route::post('bookings/{booking}/check-out', [BookingController::class, 'checkOut'])->name('bookings.check-out');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
     
     // Availability
     Route::get('/availability', [RoomController::class, 'availability'])->name('availability');
     
     // Rooms
-    Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-    Route::get('/rooms/create', [RoomController::class, 'create'])->name('rooms.create');
-    Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
-    Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
-    Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('rooms.edit');
-    Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
+    Route::resource('rooms', RoomController::class);
     
     // Cleaning Status
     Route::get('/cleaning', [CleaningController::class, 'index'])->name('cleaning.index');
@@ -85,12 +74,7 @@ Route::middleware(['auth', 'staff'])->group(function () {
     
     // Users (Admin only)
     Route::middleware(['admin'])->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::resource('users', UserController::class);
     });
     
     // Owners
@@ -102,18 +86,16 @@ Route::middleware(['auth', 'staff'])->group(function () {
     Route::put('/owners/{owner}', [OwnerController::class, 'update'])->name('owners.update');
     
     // Reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
-    Route::get('/reports/revenue', [ReportController::class, 'revenue'])->name('reports.revenue');
-    Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
     
     // Audit Logs
     Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
     Route::get('/audit/export', [AuditController::class, 'export'])->name('audit.export');
     
     // Settings
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
 });
 
 // Protected Routes for Owners
