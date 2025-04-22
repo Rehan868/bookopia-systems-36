@@ -1,8 +1,8 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\RoomController;
@@ -37,7 +37,7 @@ Route::get('/owner/login', [AuthController::class, 'showOwnerLoginForm'])->name(
 // Protected Routes for Staff
 Route::middleware(['auth', 'staff'])->group(function () {
     // Dashboard
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [StaffController::class, 'dashboard'])->name('dashboard');
     
     // Profile
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
