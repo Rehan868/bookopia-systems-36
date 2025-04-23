@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Room, 
@@ -24,7 +23,7 @@ export const fetchRooms = async (): Promise<Room[]> => {
   return (data || []).map(room => mapRoomFromDb(room));
 };
 
-export const fetchRoomById = async (id: string): Promise<Room> => {
+export const fetchRoomById = async (id: number): Promise<Room> => {
   const { data, error } = await supabase
     .from('rooms')
     .select('*')
@@ -67,7 +66,7 @@ export const fetchBookings = async (): Promise<Booking[]> => {
   return (data || []).map(booking => mapBookingFromDb(booking));
 };
 
-export const fetchBookingById = async (id: string): Promise<Booking> => {
+export const fetchBookingById = async (id: number): Promise<Booking> => {
   const { data, error } = await supabase
     .from('bookings')
     .select('*, rooms(room_number, property_id)')
@@ -175,7 +174,7 @@ export const fetchPropertyOwnership = async (): Promise<PropertyOwnership[]> => 
   return [];
 };
 
-export const updateBookingStatus = async (id: string, status: string): Promise<void> => {
+export const updateBookingStatus = async (id: number, status: string): Promise<void> => {
   const { error } = await supabase
     .from('bookings')
     .update({ status })
@@ -187,7 +186,7 @@ export const updateBookingStatus = async (id: string, status: string): Promise<v
   }
 };
 
-export const updateRoomStatus = async (id: string, status: string): Promise<void> => {
+export const updateRoomStatus = async (id: number, status: string): Promise<void> => {
   const { error } = await supabase
     .from('rooms')
     .update({ status })
@@ -199,7 +198,7 @@ export const updateRoomStatus = async (id: string, status: string): Promise<void
   }
 };
 
-export const updateCleaningTaskStatus = async (id: string, status: string): Promise<void> => {
+export const updateCleaningTaskStatus = async (id: number, status: string): Promise<void> => {
   const { error } = await supabase
     .from('cleaning_statuses')
     .update({ status })

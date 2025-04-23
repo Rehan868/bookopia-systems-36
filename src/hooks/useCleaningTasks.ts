@@ -6,7 +6,7 @@ import { CleaningTask } from '../services/supabase-types';
 import { fetchCleaningTasks } from '../services/api';
 
 // Update cleaning task status
-export const updateCleaningTaskStatus = async (id: string, status: string): Promise<void> => {
+export const updateCleaningTaskStatus = async (id: number, status: string): Promise<void> => {
   const { error } = await supabase
     .from('cleaning_statuses')
     .update({ status })
@@ -30,7 +30,7 @@ export const useUpdateCleaningTaskStatus = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: ({ id, status }: { id: string, status: string }) => {
+    mutationFn: ({ id, status }: { id: number, status: string }) => {
       return updateCleaningTaskStatus(id, status);
     },
     onSuccess: () => {

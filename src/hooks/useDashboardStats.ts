@@ -66,7 +66,6 @@ export const useDashboardStats = () => {
         const pendingCheckIns = todayCheckIns;
 
         // Generate mock monthly revenue data for the chart
-        // In a real application, this would be calculated from actual booking data
         const monthlyRevenue = [
           totalRevenue * 0.7,
           totalRevenue * 0.8,

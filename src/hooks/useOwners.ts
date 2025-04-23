@@ -22,7 +22,7 @@ export const useOwners = () => {
   });
 };
 
-export const useOwner = (id: string) => {
+export const useOwner = (id: number) => {
   return useQuery({
     queryKey: ["owner", id],
     queryFn: async () => {
