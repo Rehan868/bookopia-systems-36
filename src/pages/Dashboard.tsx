@@ -43,7 +43,8 @@ export default function Dashboard() {
     todayCheckouts: 0,
     revenue: { today: 0, thisWeek: 0, thisMonth: 0 },
     occupancyRate: 0,
-    recentBookings: []
+    recentBookings: [],
+    weeklyOccupancyTrend: [0, 0, 0, 0, 0, 0, 0]
   };
   
   const weeklyOccupancyTrend = stats?.weeklyOccupancyTrend || [0, 0, 0, 0, 0, 0, 0];
@@ -59,35 +60,39 @@ export default function Dashboard() {
           total={safeStats.totalRooms} 
           trend="up"
           trendDirection="up"
+          trendValue="+2 from yesterday"
           icon={BedDouble}
         />
         <StatCard 
           title="Today's Check-ins" 
           value={safeStats.todayCheckins} 
-          trend={0}
+          trend="neutral"
           trendDirection="neutral"
+          trendValue="Same as yesterday"
           icon={ArrowDownToLine}
         />
         <StatCard 
           title="Today's Check-outs" 
           value={safeStats.todayCheckouts} 
-          trend={2}
+          trend="up"
           trendDirection="up"
+          trendValue="+2 from yesterday"
           icon={ArrowUpFromLine}
         />
         <StatCard 
           title="Occupancy Rate" 
           value={`${Math.round(safeStats.occupancyRate)}%`} 
-          trend={3.2}
+          trend="up"
           trendDirection="up"
+          trendValue="+3.2% from last week"
           icon={Percent}
         />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <OccupancyChart data={weeklyOccupancyTrend} />
-          <RecentBookings bookings={safeStats.recentBookings} />
+          <OccupancyChart />
+          <RecentBookings />
         </div>
         <div className="space-y-6">
           <QuickButtons />

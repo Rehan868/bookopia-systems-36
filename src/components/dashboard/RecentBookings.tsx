@@ -5,56 +5,55 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Clock, User } from 'lucide-react';
+import { Booking } from '@/services/supabase-types';
 
-interface BookingData {
-  id: string;
-  guestName: string;
-  roomName: string;
-  checkIn: string;
-  checkOut: string;
-  status: 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled';
-  createdAt: string;
+interface RecentBookingsProps {
+  bookings?: Booking[];
 }
 
-// Mock data - would come from API in real app
-const bookings: BookingData[] = [
+// Default mock data - would come from API in real app
+const defaultBookings = [
   {
     id: 'B1001',
-    guestName: 'John Smith',
-    roomName: 'Deluxe Suite 101',
-    checkIn: '2023-06-15',
-    checkOut: '2023-06-18',
+    guest_name: 'John Smith',
+    room_id: '101',
+    rooms: { number: '101', property: 'Deluxe Suite' },
+    check_in: '2023-06-15',
+    check_out: '2023-06-18',
     status: 'confirmed',
-    createdAt: '2023-06-01T10:30:00'
+    created_at: '2023-06-01T10:30:00'
   },
   {
     id: 'B1002',
-    guestName: 'Emma Johnson',
-    roomName: 'Executive Room 205',
-    checkIn: '2023-06-14',
-    checkOut: '2023-06-16',
+    guest_name: 'Emma Johnson',
+    room_id: '205',
+    rooms: { number: '205', property: 'Executive Room' },
+    check_in: '2023-06-14',
+    check_out: '2023-06-16',
     status: 'checked-in',
-    createdAt: '2023-06-10T14:45:00'
+    created_at: '2023-06-10T14:45:00'
   },
   {
     id: 'B1003',
-    guestName: 'Michael Chen',
-    roomName: 'Standard Room 304',
-    checkIn: '2023-06-12',
-    checkOut: '2023-06-13',
+    guest_name: 'Michael Chen',
+    room_id: '304',
+    rooms: { number: '304', property: 'Standard Room' },
+    check_in: '2023-06-12',
+    check_out: '2023-06-13',
     status: 'checked-out',
-    createdAt: '2023-06-08T09:15:00'
+    created_at: '2023-06-08T09:15:00'
   },
   {
     id: 'B1004',
-    guestName: 'Sarah Davis',
-    roomName: 'Deluxe Suite 102',
-    checkIn: '2023-06-18',
-    checkOut: '2023-06-20',
+    guest_name: 'Sarah Davis',
+    room_id: '102',
+    rooms: { number: '102', property: 'Deluxe Suite' },
+    check_in: '2023-06-18',
+    check_out: '2023-06-20',
     status: 'confirmed',
-    createdAt: '2023-06-11T16:20:00'
+    created_at: '2023-06-11T16:20:00'
   }
-];
+] as unknown as Booking[];
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -79,7 +78,7 @@ function getStatusColor(status: string) {
   }
 }
 
-export function RecentBookings() {
+export function RecentBookings({ bookings = defaultBookings }: RecentBookingsProps) {
   return (
     <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
       <CardHeader className="pb-4">
@@ -92,7 +91,7 @@ export function RecentBookings() {
             <div key={booking.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{booking.guestName}</span>
+                  <span className="font-medium">{booking.guest_name}</span>
                   <Badge className={cn("text-xs font-normal", getStatusColor(booking.status))}>
                     {booking.status.replace('-', ' ')}
                   </Badge>
@@ -100,11 +99,11 @@ export function RecentBookings() {
                 <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <User className="h-3.5 w-3.5" />
-                    <span>{booking.roomName}</span>
+                    <span>{booking.rooms?.number} - {booking.rooms?.property}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <CalendarClock className="h-3.5 w-3.5" />
-                    <span>{formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}</span>
+                    <span>{formatDate(booking.check_in)} - {formatDate(booking.check_out)}</span>
                   </div>
                 </div>
               </div>
