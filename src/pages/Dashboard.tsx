@@ -5,8 +5,9 @@ import { TodayActivity } from '@/components/dashboard/TodayActivity';
 import { RecentBookings } from '@/components/dashboard/RecentBookings';
 import { OccupancyChart } from '@/components/dashboard/OccupancyChart';
 import { QuickButtons } from '@/components/dashboard/QuickButtons';
-import { Loader } from 'lucide-react';
+import { Loader, BedDouble, ArrowDownToLine, ArrowUpFromLine, Percent } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { DashboardStats } from '@/services/supabase-types';
 
 export default function Dashboard() {
   const { data: stats, isLoading, error } = useDashboardStats();
@@ -34,6 +35,17 @@ export default function Dashboard() {
     );
   }
   
+  const safeStats: DashboardStats = stats || {
+    totalRooms: 0,
+    availableRooms: 0,
+    occupiedRooms: 0,
+    todayCheckins: 0,
+    todayCheckouts: 0,
+    revenue: { today: 0, thisWeek: 0, thisMonth: 0 },
+    occupancyRate: 0,
+    recentBookings: []
+  };
+  
   const weeklyOccupancyTrend = stats?.weeklyOccupancyTrend || [0, 0, 0, 0, 0, 0, 0];
   
   return (
@@ -43,39 +55,39 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Available Rooms" 
-          value={stats?.availableRooms || 0} 
-          total={stats?.totalRooms || 0} 
-          trend={5}
+          value={safeStats.availableRooms} 
+          total={safeStats.totalRooms} 
+          trend="up"
           trendDirection="up"
-          icon="rooms"
+          icon={BedDouble}
         />
         <StatCard 
           title="Today's Check-ins" 
-          value={stats?.todayCheckins || 0} 
+          value={safeStats.todayCheckins} 
           trend={0}
           trendDirection="neutral"
-          icon="check-in"
+          icon={ArrowDownToLine}
         />
         <StatCard 
           title="Today's Check-outs" 
-          value={stats?.todayCheckouts || 0} 
+          value={safeStats.todayCheckouts} 
           trend={2}
           trendDirection="up"
-          icon="check-out"
+          icon={ArrowUpFromLine}
         />
         <StatCard 
           title="Occupancy Rate" 
-          value={`${Math.round(stats?.occupancyRate || 0)}%`} 
+          value={`${Math.round(safeStats.occupancyRate)}%`} 
           trend={3.2}
           trendDirection="up"
-          icon="percentage"
+          icon={Percent}
         />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <OccupancyChart data={weeklyOccupancyTrend as number[]} />
-          <RecentBookings bookings={stats?.recentBookings || []} />
+          <OccupancyChart data={weeklyOccupancyTrend} />
+          <RecentBookings bookings={safeStats.recentBookings} />
         </div>
         <div className="space-y-6">
           <QuickButtons />

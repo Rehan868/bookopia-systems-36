@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { fetchOwners, fetchPropertyOwnership, getById, create, update, remove, createAuditLog } from '../services/api';
 import { PropertyOwnership } from '../services/supabase-types';
-import { Owner as OwnerType } from '../services/supabase-types';
+import { Owner as BaseOwnerType } from '../services/supabase-types';
 
 // Define the extended owner interface for the hook
-export interface Owner extends OwnerType {
+export interface Owner extends Omit<BaseOwnerType, 'properties'> {
   properties?: number;
   revenue?: number;
   occupancy?: number;
@@ -28,7 +28,7 @@ export function useOwners() {
       try {
         setIsLoading(true);
         const owners = await fetchOwners();
-        setData(owners as Owner[]);
+        setData(owners as unknown as Owner[]);
         setIsLoading(false);
       } catch (err) {
         setError(err);
@@ -120,8 +120,8 @@ export function useOwner(id: string) {
         setIsLoading(true);
         
         // Fetch owner data
-        const owner = await getById<Owner>('owners', id);
-        setData(owner);
+        const owner = await getById<BaseOwnerType>('owners', id);
+        setData(owner as unknown as Owner);
         
         // Fetch owner's room information
         const propertyOwnerships = await fetchPropertyOwnership();

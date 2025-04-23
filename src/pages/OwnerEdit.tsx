@@ -54,6 +54,9 @@ const OwnerEdit = () => {
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!owner) return <div className="p-6">Owner not found</div>;
   
+  // Safely extract payment info
+  const paymentInfo = owner.payment_info as Record<string, string> || {};
+  
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Edit Owner</h1>
@@ -93,7 +96,7 @@ const OwnerEdit = () => {
                       <Input 
                         id="bank" 
                         name="bank" 
-                        defaultValue={owner.payment_info?.bank || ''} 
+                        defaultValue={paymentInfo.bank || ''} 
                       />
                     </div>
                     
@@ -102,7 +105,7 @@ const OwnerEdit = () => {
                       <Input 
                         id="accountNumber" 
                         name="accountNumber" 
-                        defaultValue={owner.payment_info?.account_number || ''}
+                        defaultValue={paymentInfo.account_number || ''}
                       />
                     </div>
                     
@@ -111,7 +114,7 @@ const OwnerEdit = () => {
                       <Input 
                         id="routingNumber" 
                         name="routingNumber" 
-                        defaultValue={owner.payment_info?.routing_number || ''} 
+                        defaultValue={paymentInfo.routing_number || ''} 
                       />
                     </div>
                   </div>
