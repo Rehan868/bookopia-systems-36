@@ -78,7 +78,7 @@ export function useOwnerDashboard() {
         // Step 3: Get room details
         const { data: roomsData, error: roomsError } = await supabase
           .from('rooms')
-          .select('*, room_types(name, base_rate), properties(name, address, city)')
+          .select('*, room_types!inner(name, base_rate), properties!inner(name, address, city)')
           .in('id', roomIds);
           
         if (roomsError) throw roomsError;
@@ -87,7 +87,7 @@ export function useOwnerDashboard() {
         const transformedRooms = roomsData?.map(room => {
           return {
             ...room,
-            property: room.properties?.name,
+            property: room.properties?.name || '',
             name: room.number, // Using number as name for backward compatibility
             room_types: {
               id: '',
@@ -109,14 +109,15 @@ export function useOwnerDashboard() {
           
         if (bookingsError) throw bookingsError;
         
-        // Transform to match the Booking interface
+        // Transform to match the Booking interface with default values for missing fields
         const transformedBookings = bookingsData?.map(booking => {
           return {
             ...booking,
-            adults: booking.adults || 2,
-            children: booking.children || 0,
-            netToOwner: booking.net_to_owner || 0, // For backward compatibility
-            notes: booking.special_requests
+            adults: 2, // Default value
+            children: 0, // Default value
+            net_to_owner: 0, // Default value
+            netToOwner: 0, // For backward compatibility
+            notes: booking.special_requests || ''
           } as unknown as Booking;
         }) || [];
         
@@ -174,28 +175,28 @@ export function useOwnerDashboard() {
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
         
-        const monthlyEarnings = bookingsData?.reduce((sum, booking) => {
+        const monthlyEarnings = transformedBookings.reduce((sum, booking) => {
           const checkOutDate = new Date(booking.check_out);
           if (
             checkOutDate.getMonth() === currentMonth && 
             checkOutDate.getFullYear() === currentYear && 
             booking.status === 'checked-out'
           ) {
-            return sum + (booking.net_to_owner || 0);
+            return sum + (booking.netToOwner || 0);
           }
           return sum;
-        }, 0) || 0;
+        }, 0);
         
-        const yearlyEarnings = bookingsData?.reduce((sum, booking) => {
+        const yearlyEarnings = transformedBookings.reduce((sum, booking) => {
           const checkOutDate = new Date(booking.check_out);
           if (
             checkOutDate.getFullYear() === currentYear && 
             booking.status === 'checked-out'
           ) {
-            return sum + (booking.net_to_owner || 0);
+            return sum + (booking.netToOwner || 0);
           }
           return sum;
-        }, 0) || 0;
+        }, 0);
         
         // Calculate occupancy rate
         const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms * 100) : 0;

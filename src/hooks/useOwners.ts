@@ -1,22 +1,21 @@
+
 import { useState, useEffect } from 'react';
 import { fetchOwners, fetchPropertyOwnership, getById, create, update, remove, createAuditLog } from '../services/api';
-import { Owner, PropertyOwnership } from '../services/supabase-types';
+import { PropertyOwnership } from '../services/supabase-types';
+import { Owner as OwnerType } from '../services/supabase-types';
 
-export interface Owner {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  properties: number;
-  revenue: number;
-  occupancy: number;
+// Define the extended owner interface for the hook
+export interface Owner extends OwnerType {
+  properties?: number;
+  revenue?: number;
+  occupancy?: number;
   avatar?: string;
-  paymentDetails: {
+  joinedDate?: string;
+  paymentDetails?: {
     bank: string;
     accountNumber: string;
     routingNumber: string;
   };
-  joinedDate: string;
 }
 
 export function useOwners() {
@@ -29,7 +28,7 @@ export function useOwners() {
       try {
         setIsLoading(true);
         const owners = await fetchOwners();
-        setData(owners);
+        setData(owners as Owner[]);
         setIsLoading(false);
       } catch (err) {
         setError(err);
