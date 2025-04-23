@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Search, LogOut, Settings, User } from "lucide-react";
+import { Search, LogOut, Settings, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   DropdownMenu, 
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export function Header() {
   const navigate = useNavigate();
@@ -38,9 +38,7 @@ export function Header() {
       </div>
       
       <div className="flex flex-1 items-center justify-end gap-4">
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <NotificationDropdown />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

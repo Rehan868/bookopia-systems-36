@@ -1,72 +1,18 @@
-
 import { useState, useEffect } from 'react';
-
-// Mock data for rooms
-const mockRooms = [
-  {
-    id: '1',
-    number: '101',
-    name: 'Ocean View Suite',
-    property: 'Marina Tower',
-    type: 'Suite',
-    capacity: 2,
-    status: 'available',
-    rate: 150
-  },
-  {
-    id: '2',
-    number: '102',
-    name: 'Garden View Suite',
-    property: 'Marina Tower',
-    type: 'Suite',
-    capacity: 2,
-    status: 'occupied',
-    rate: 120
-  },
-  {
-    id: '3',
-    number: '201',
-    name: 'Deluxe Room',
-    property: 'Marina Tower',
-    type: 'Standard',
-    capacity: 2,
-    status: 'cleaning',
-    rate: 100
-  },
-  {
-    id: '4',
-    number: '301',
-    name: 'Family Suite',
-    property: 'Downtown Heights',
-    type: 'Suite',
-    capacity: 4,
-    status: 'available',
-    rate: 180
-  },
-  {
-    id: '5',
-    number: '302',
-    name: 'Executive Suite',
-    property: 'Downtown Heights',
-    type: 'Executive',
-    capacity: 2,
-    status: 'maintenance',
-    rate: 200
-  },
-];
+import { fetchRooms, fetchRoomById, create, update, remove, createAuditLog } from '../services/api';
+import { Room } from '../services/supabase-types';
 
 export function useRooms() {
-  const [data, setData] = useState<any[] | null>(null);
+  const [data, setData] = useState<Room[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setData(mockRooms);
+        setIsLoading(true);
+        const rooms = await fetchRooms();
+        setData(rooms);
         setIsLoading(false);
       } catch (err) {
         setError(err);
@@ -77,40 +23,86 @@ export function useRooms() {
     fetchData();
   }, []);
 
-  return { data, isLoading, error };
+  // Function to add a new room
+  const addRoom = async (room: Omit<Room, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      setIsLoading(true);
+      const newRoom = await create<Room>('rooms', room);
+      setData(prevData => prevData ? [...prevData, newRoom] : [newRoom]);
+      
+      // Create audit log
+      const userId = localStorage.getItem('userId');
+      await createAuditLog(userId, 'create', 'room', newRoom.id, { room_number: newRoom.number });
+      
+      setIsLoading(false);
+      return newRoom;
+    } catch (err) {
+      setError(err);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  // Function to update a room
+  const updateRoom = async (id: string, roomData: Partial<Room>) => {
+    try {
+      setIsLoading(true);
+      const updatedRoom = await update<Room>('rooms', id, roomData);
+      setData(prevData => 
+        prevData ? prevData.map(room => 
+          room.id === id ? { ...room, ...updatedRoom } : room
+        ) : null
+      );
+      
+      // Create audit log
+      const userId = localStorage.getItem('userId');
+      await createAuditLog(userId, 'update', 'room', id, { room_number: updatedRoom.number });
+      
+      setIsLoading(false);
+      return updatedRoom;
+    } catch (err) {
+      setError(err);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  // Function to delete a room
+  const deleteRoom = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await remove('rooms', id);
+      setData(prevData => 
+        prevData ? prevData.filter(room => room.id !== id) : null
+      );
+      
+      // Create audit log
+      const userId = localStorage.getItem('userId');
+      await createAuditLog(userId, 'delete', 'room', id);
+      
+      setIsLoading(false);
+    } catch (err) {
+      setError(err);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  return { data, isLoading, error, addRoom, updateRoom, deleteRoom };
 }
 
-// Add the missing useRoom hook for individual room data
+// Add the useRoom hook for individual room data
 export function useRoom(id: string) {
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Find the room with the matching ID
-        const room = mockRooms.find(room => room.id === id);
-        
-        if (room) {
-          // Add some additional mock data for the RoomDetails component
-          const enrichedRoom = {
-            ...room,
-            description: 'A spacious room with modern amenities and beautiful views.',
-            floor: room.number.charAt(0),
-            amenities: ['WiFi', 'Air Conditioning', 'Mini Bar', 'TV'],
-            updated_at: new Date().toISOString()
-          };
-          
-          setData(enrichedRoom);
-        } else {
-          setError(new Error('Room not found'));
-        }
-        
+        setIsLoading(true);
+        const room = await fetchRoomById(id);
+        setData(room);
         setIsLoading(false);
       } catch (err) {
         setError(err);
@@ -121,5 +113,27 @@ export function useRoom(id: string) {
     fetchData();
   }, [id]);
 
-  return { data, isLoading, error };
+  // Function to update a room
+  const updateRoom = async (roomData: Partial<Room>) => {
+    if (!id) return;
+    
+    try {
+      setIsLoading(true);
+      const updatedRoom = await update<Room>('rooms', id, roomData);
+      setData(prevData => prevData ? { ...prevData, ...updatedRoom } : updatedRoom);
+      
+      // Create audit log
+      const userId = localStorage.getItem('userId');
+      await createAuditLog(userId, 'update', 'room', id, { room_number: updatedRoom.number });
+      
+      setIsLoading(false);
+      return updatedRoom;
+    } catch (err) {
+      setError(err);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  return { data, isLoading, error, updateRoom };
 }
