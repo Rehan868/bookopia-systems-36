@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CalendarClock, DoorOpen, Edit, MoreHorizontal, User, Loader, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowRight, CalendarClock, DoorOpen, Edit, MoreHorizontal, User, Loader, CreditCard, Printer, Mail, Trash2, CheckCircle2, XCircle, FileDown, DollarSign } from 'lucide-react';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { 
   DropdownMenu,
@@ -11,15 +11,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useBookings } from '@/hooks/useBookings';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { supabase } from '@/integrations/supabase';
-import { Booking } from '@/services/supabase-types';
-import { createBookingNotification } from '@/services/notification.service';
-import { updateBookingStatus, updateRoomStatus } from '@/services/api';
 
 function formatDate(dateString: string) {
   try {
@@ -41,8 +37,21 @@ function getStatusBadge(status: string) {
       return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
     case 'pending':
       return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-    case 'no-show':
-      return <Badge className="bg-gray-100 text-gray-800">No Show</Badge>;
+    default:
+      return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+  }
+}
+
+function getPaymentStatusBadge(status: string) {
+  switch (status) {
+    case 'paid':
+      return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+    case 'partial':
+      return <Badge className="bg-blue-100 text-blue-800">Partial</Badge>;
+    case 'pending':
+      return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+    case 'refunded':
+      return <Badge className="bg-gray-100 text-gray-800">Refunded</Badge>;
     default:
       return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
   }
@@ -63,32 +72,8 @@ export function BookingList({
   filterValue = 'all',
   dateRange
 }: BookingListProps) {
-  const { data: bookings, isLoading, error, updateBooking } = useBookings();
+  const { data: bookings, isLoading, error } = useBookings();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [processingId, setProcessingId] = useState<string | null>(null);
-
-  // Set up real-time subscription for booking updates
-  useEffect(() => {
-    const subscription = supabase
-      .channel('bookings-channel')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'bookings' 
-        }, 
-        (payload) => {
-          // Force refresh data
-          window.location.reload();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   // Apply filters to bookings
   const filteredBookings = useMemo(() => {
@@ -101,8 +86,8 @@ export function BookingList({
         !searchQuery || 
         booking.guest_name.toLowerCase().includes(searchLower) ||
         booking.booking_number.toLowerCase().includes(searchLower) ||
-        (booking.rooms?.number?.toLowerCase().includes(searchLower) ?? false) ||
-        (booking.rooms?.property?.toLowerCase().includes(searchLower) ?? false);
+        (booking.rooms as any)?.number?.toLowerCase().includes(searchLower) ||
+        (booking.rooms as any)?.property?.toLowerCase().includes(searchLower);
       
       // Apply status filter
       const matchesStatus = filterValue === 'all' || booking.status === filterValue;
@@ -125,102 +110,48 @@ export function BookingList({
     });
   }, [bookings, searchQuery, filterValue, dateRange]);
 
-  // Handle check-in/check-out
-  const handleStatusChange = async (booking: Booking, newStatus: string) => {
-    try {
-      setProcessingId(booking.id);
-      
-      // Update booking status
-      await updateBookingStatus(booking.id, newStatus);
-      
-      // Update room status if needed
-      if (booking.room_id) {
-        if (newStatus === 'checked-in') {
-          await updateRoomStatus(booking.room_id, 'occupied');
-        } else if (newStatus === 'checked-out') {
-          // When checking out, set room to cleaning status
-          await updateRoomStatus(booking.room_id, 'cleaning');
-          
-          // Create cleaning task for this room
-          const today = new Date().toISOString().split('T')[0];
-          
-          await supabase.from('cleaning_tasks').insert({
-            room_id: booking.room_id,
-            property_id: booking.property_id,
-            date: today,
-            status: 'pending',
-            notes: `Cleaning required after checkout (booking #${booking.booking_number})`,
-            created_at: new Date().toISOString()
-          });
-        }
-      }
-      
-      // Create notification for the event
-      const eventType = newStatus === 'checked-in' ? 'checked-in' : 
-                       (newStatus === 'checked-out' ? 'checked-out' : 'updated');
-      await createBookingNotification(booking, eventType);
-      
-      // Show success toast
+  const handlePayment = (bookingId: string) => {
+    toast({
+      title: "Payment Processing",
+      description: `Processing payment for booking #${bookingId}...`,
+    });
+  };
+
+  const handleEmailSend = (bookingId: string) => {
+    toast({
+      title: "Email Sent",
+      description: `Confirmation email sent for booking #${bookingId}.`,
+    });
+  };
+
+  const handleDelete = (bookingId: string) => {
+    if (confirm("Are you sure you want to delete this booking?")) {
       toast({
-        title: newStatus === 'checked-in' ? 'Guest Checked In' : 'Guest Checked Out',
-        description: `${booking.guest_name} has been ${
-          newStatus === 'checked-in' ? 'checked in' : 'checked out'
-        } successfully.`,
+        title: "Booking Deleted",
+        description: `Booking #${bookingId} has been deleted.`,
       });
-      
-      // Update local state
-      if (updateBooking) {
-        await updateBooking(booking.id, { status: newStatus });
-      }
-      
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Operation Failed',
-        description: `Failed to update booking status. Please try again.`,
-      });
-    } finally {
-      setProcessingId(null);
     }
   };
 
-  const handleCancelBooking = async (booking: Booking) => {
-    try {
-      setProcessingId(booking.id);
-      
-      // Update booking status
-      await updateBookingStatus(booking.id, 'cancelled');
-      
-      // Free up the room
-      if (booking.room_id) {
-        await updateRoomStatus(booking.room_id, 'available');
-      }
-      
-      // Create notification
-      await createBookingNotification(booking, 'cancelled');
-      
-      // Show success toast
-      toast({
-        title: 'Booking Cancelled',
-        description: `Booking #${booking.booking_number} has been cancelled.`,
-      });
-      
-      // Update local state
-      if (updateBooking) {
-        await updateBooking(booking.id, { status: 'cancelled' });
-      }
-      
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Operation Failed',
-        description: `Failed to cancel booking. Please try again.`,
-      });
-    } finally {
-      setProcessingId(null);
-    }
+  const handleStatusChange = (bookingId: string, newStatus: string) => {
+    toast({
+      title: "Status Updated",
+      description: `Booking #${bookingId} status changed to ${newStatus}.`,
+    });
+  };
+
+  const handleDownloadInvoice = (bookingId: string) => {
+    toast({
+      title: "Invoice Downloaded",
+      description: `Invoice for booking #${bookingId} has been downloaded.`,
+    });
+  };
+
+  const handleUpdatePayment = (bookingId: string) => {
+    toast({
+      title: "Payment Update",
+      description: `Payment update modal opened for booking #${bookingId}.`,
+    });
   };
 
   if (isLoading) {
@@ -266,15 +197,20 @@ export function BookingList({
                 <th className="text-left font-medium px-6 py-3">Check In</th>
                 <th className="text-left font-medium px-6 py-3">Check Out</th>
                 <th className="text-left font-medium px-6 py-3">Status</th>
-                <th className="text-left font-medium px-6 py-3">Amount</th>
-                <th className="text-left font-medium px-6 py-3">Paid</th>
+                <th className="text-left font-medium px-6 py-3">Total Amount</th>
+                <th className="text-left font-medium px-6 py-3">Amount Paid</th>
                 <th className="text-left font-medium px-6 py-3">Remaining</th>
                 <th className="text-left font-medium px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredBookings.map((booking) => {
-                const room = booking.rooms;
+                const room = booking.rooms as any;
+                // Calculate amount paid and remaining amount (for demo purposes)
+                const totalAmount = booking.amount || 0;
+                const amountPaid = booking.amount_paid || (booking.payment_status === 'paid' ? totalAmount : booking.payment_status === 'partial' ? totalAmount * 0.5 : 0);
+                const remainingAmount = Math.max(0, totalAmount - amountPaid);
+                
                 return (
                   <tr key={booking.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4">
@@ -287,66 +223,60 @@ export function BookingList({
                     <td className="px-6 py-4">{formatDate(booking.check_in)}</td>
                     <td className="px-6 py-4">{formatDate(booking.check_out)}</td>
                     <td className="px-6 py-4">{getStatusBadge(booking.status)}</td>
-                    <td className="px-6 py-4">${booking.amount?.toFixed(2) || '0.00'}</td>
-                    <td className="px-6 py-4">${booking.amount_paid?.toFixed(2) || '0.00'}</td>
-                    <td className="px-6 py-4">${booking.remaining_amount?.toFixed(2) || '0.00'}</td>
+                    <td className="px-6 py-4">${totalAmount}</td>
+                    <td className="px-6 py-4">${amountPaid} {getPaymentStatusBadge(booking.payment_status || 'pending')}</td>
+                    <td className="px-6 py-4">${remainingAmount}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <Button size="sm" variant="ghost" asChild>
-                          <Link to={`/bookings/${booking.id}`}>
+                          <Link to={`/bookings/${booking.id}`} title="View Details">
                             <ArrowRight className="h-4 w-4" />
                           </Link>
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="ghost" disabled={!!processingId}>
+                            <Button size="sm" variant="ghost">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to={`/bookings/${booking.id}`}>View Details</Link>
-                            </DropdownMenuItem>
-                            
+                          <DropdownMenuContent align="end" className="w-48">
                             {booking.status === 'confirmed' && (
-                              <DropdownMenuItem 
-                                onClick={() => handleStatusChange(booking, 'checked-in')}
-                                disabled={processingId === booking.id}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Check In
+                              <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'checked-in')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Check-in
                               </DropdownMenuItem>
                             )}
-                            
                             {booking.status === 'checked-in' && (
-                              <DropdownMenuItem 
-                                onClick={() => handleStatusChange(booking, 'checked-out')}
-                                disabled={processingId === booking.id}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Check Out
+                              <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'checked-out')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Check-out
                               </DropdownMenuItem>
                             )}
-                            
+                            <DropdownMenuItem onClick={() => handleUpdatePayment(booking.id)}>
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Update Payment
+                            </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link to={`/bookings/${booking.id}/edit`}>
+                              <Link to={`/bookings/edit/${booking.id}`}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </Link>
                             </DropdownMenuItem>
-                            
+                            <DropdownMenuItem onClick={() => handleDownloadInvoice(booking.id)}>
+                              <FileDown className="h-4 w-4 mr-2" />
+                              Download Invoice
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            
-                            {(booking.status === 'confirmed' || booking.status === 'pending') && (
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => handleCancelBooking(booking)}
-                                disabled={processingId === booking.id}
-                              >
+                            {booking.status !== 'cancelled' && booking.status !== 'checked-out' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'cancelled')}>
                                 <XCircle className="h-4 w-4 mr-2" />
                                 Cancel Booking
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(booking.id)}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -367,7 +297,12 @@ export function BookingList({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBookings.map((booking) => {
-            const room = booking.rooms;
+            const room = booking.rooms as any;
+            // Calculate amount paid and remaining amount (for demo purposes)
+            const totalAmount = booking.amount || 0;
+            const amountPaid = booking.amount_paid || (booking.payment_status === 'paid' ? totalAmount : booking.payment_status === 'partial' ? totalAmount * 0.5 : 0);
+            const remainingAmount = Math.max(0, totalAmount - amountPaid);
+            
             return (
               <Card key={booking.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <div className="p-6">
@@ -410,49 +345,77 @@ export function BookingList({
                         <div className="p-1.5 bg-muted rounded-md">
                           <div className="font-semibold text-xs text-muted-foreground">$</div>
                         </div>
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground">AMOUNT</p>
-                          <p className="text-sm">${booking.amount}</p>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <p className="text-xs font-medium text-muted-foreground">TOTAL AMOUNT</p>
+                            <p className="text-sm font-medium">${totalAmount}</p>
+                          </div>
+                          <div className="flex justify-between">
+                            <p className="text-xs font-medium text-muted-foreground">PAID</p>
+                            <p className="text-sm">${amountPaid}</p>
+                          </div>
+                          <div className="flex justify-between">
+                            <p className="text-xs font-medium text-muted-foreground">REMAINING</p>
+                            <p className="text-sm">${remainingAmount}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2 border-t pt-4">
-                      {booking.status === 'confirmed' && (
-                        <Button 
-                          size="sm" 
-                          className="mr-auto"
-                          onClick={() => handleStatusChange(booking, 'checked-in')}
-                          disabled={processingId === booking.id}
-                        >
-                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                          Check In
-                        </Button>
-                      )}
-                      
-                      {booking.status === 'checked-in' && (
-                        <Button 
-                          size="sm"
-                          className="mr-auto"
-                          onClick={() => handleStatusChange(booking, 'checked-out')}
-                          disabled={processingId === booking.id}
-                        >
-                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                          Check Out
-                        </Button>
-                      )}
-                      
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to={`/bookings/${booking.id}/edit`}>
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          Edit
-                        </Link>
-                      </Button>
+                    <div className="flex justify-end gap-2 border-t pt-4">
                       <Button size="sm" asChild>
                         <Link to={`/bookings/${booking.id}`}>
                           View
                         </Link>
                       </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <MoreHorizontal className="h-3.5 w-3.5 mr-1" />
+                            Actions
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          {booking.status === 'confirmed' && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'checked-in')}>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Check-in
+                            </DropdownMenuItem>
+                          )}
+                          {booking.status === 'checked-in' && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'checked-out')}>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Check-out
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleUpdatePayment(booking.id)}>
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Update Payment
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/bookings/edit/${booking.id}`}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadInvoice(booking.id)}>
+                            <FileDown className="h-4 w-4 mr-2" />
+                            Download Invoice
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {booking.status !== 'cancelled' && booking.status !== 'checked-out' && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(booking.id, 'cancelled')}>
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Cancel Booking
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(booking.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,4 @@
-
-import { supabase, handleError } from '../integrations/supabase';
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Room, 
   Booking, 
@@ -7,363 +6,221 @@ import {
   Owner, 
   Expense, 
   CleaningTask,
-  PropertyOwnership,
-  Notification,
-  AuditLog
+  PropertyOwnership
 } from './supabase-types';
 
-// Generic CRUD functions - use 'any' to avoid type mismatches with Supabase tables for now
-export async function getAll<T>(table: string): Promise<T[]> {
-  try {
-    const { data, error } = await supabase
-      .from(table as any)
-      .select('*');
-    
-    if (error) throw error;
-    return data as T[];
-  } catch (error) {
-    console.error(`Error fetching ${table}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-export async function getById<T>(table: string, id: string): Promise<T | null> {
-  try {
-    const { data, error } = await supabase
-      .from(table as any)
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    return data as T;
-  } catch (error) {
-    console.error(`Error fetching ${table} with ID ${id}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-/**
- * Create an item
- */
-export async function create<T>(table: string, data: Record<string, any>): Promise<T> {
-  try {
-    // Add timestamps
-    const insertData = {
-      ...data,
-      created_at: data.created_at || new Date().toISOString(),
-      updated_at: data.updated_at || new Date().toISOString(),
-    };
-    
-    const { data: result, error } = await supabase
-      .from(table as any)
-      .insert(insertData as any)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return result as T;
-  } catch (error) {
-    console.error(`Error creating ${table}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-/**
- * Update an item
- */
-export async function update<T>(table: string, id: string, data: Record<string, any>): Promise<T> {
-  try {
-    // Add updated timestamp
-    const updateData = {
-      ...data,
-      updated_at: new Date().toISOString(),
-    };
-    
-    const { data: result, error } = await supabase
-      .from(table as any)
-      .update(updateData as any)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return result as T;
-  } catch (error) {
-    console.error(`Error updating ${table} with ID ${id}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-/**
- * Remove an item
- */
-export async function remove(table: string, id: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from(table as any)
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-  } catch (error) {
-    console.error(`Error removing ${table} with ID ${id}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-/**
- * Query with filters
- */
-export async function query<T>(table: string, options: {
-  filters?: Record<string, any>,
-  order?: { column: string, ascending: boolean },
-  limit?: number,
-  offset?: number
-}): Promise<T[]> {
-  try {
-    let query = supabase.from(table as any).select('*');
-    
-    // Apply filters
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
-    
-    // Apply ordering
-    if (options.order) {
-      query = query.order(options.order.column, { 
-        ascending: options.order.ascending 
-      });
-    }
-    
-    // Apply pagination
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-    
-    if (options.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    return data as T[];
-  } catch (error) {
-    console.error(`Error querying ${table}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-/**
- * Create audit log entry
- */
-export async function createAuditLog(
-  userId: string | null, 
-  action: string, 
-  resourceType: string, 
-  resourceId?: string, 
-  details?: Record<string, any>
-): Promise<AuditLog> {
-  try {
-    const auditData = {
-      user_id: userId,
-      action,
-      resource_type: resourceType,
-      resource_id: resourceId,
-      details,
-      created_at: new Date().toISOString()
-    };
-    
-    // Use custom RPC for audit logs since it might not be in the public schema
-    // or handle this through direct SQL insert if appropriate
-    console.log("Creating audit log:", auditData);
-    
-    // Return a minimal object to satisfy the return type
-    // In a production app, this would be properly implemented
-    return {
-      id: 'generated-id',
-      user_id: userId,
-      action,
-      resource_type: resourceType,
-      resource_id: resourceId,
-      details,
-      created_at: new Date().toISOString()
-    } as AuditLog;
-  } catch (error) {
-    console.error('Error creating audit log:', error);
-    // Don't throw here, just log the error
-    return {} as AuditLog;
-  }
-}
-
-// Booking specific functions
-export async function fetchBookings(): Promise<Booking[]> {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*');
-      
-    if (error) throw error;
-    
-    // Transform data to match expected Booking interface
-    return (data || []).map(booking => ({
-      ...booking,
-      rooms: undefined, // Will be populated if needed elsewhere
-      property: undefined, // Will be populated if needed elsewhere
-    })) as Booking[];
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    throw new Error(handleError(error));
-  }
-}
-
-export async function fetchBookingById(id: string): Promise<Booking> {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error) throw error;
-    return data as unknown as Booking;
-  } catch (error) {
-    console.error(`Error fetching booking with ID ${id}:`, error);
-    throw new Error(handleError(error));
-  }
-}
-
-export async function fetchTodayCheckins(): Promise<Booking[]> {
-  const today = new Date().toISOString().split('T')[0];
+export const fetchRooms = async (): Promise<Room[]> => {
+  const { data, error } = await supabase
+    .from('rooms')
+    .select('*');
   
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('check_in', today)
-      .eq('status', 'confirmed');
-      
-    if (error) throw error;
-    return data as unknown as Booking[];
-  } catch (error) {
-    console.error('Error fetching today\'s check-ins:', error);
-    throw new Error(handleError(error));
-  }
-}
-
-export async function fetchTodayCheckouts(): Promise<Booking[]> {
-  const today = new Date().toISOString().split('T')[0];
-  
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('check_out', today)
-      .eq('status', 'checked-in');
-      
-    if (error) throw error;
-    return data as unknown as Booking[];
-  } catch (error) {
-    console.error('Error fetching today\'s check-outs:', error);
-    throw new Error(handleError(error));
-  }
-}
-
-export async function updateBookingStatus(bookingId: string, status: string): Promise<Booking> {
-  return update<Booking>('bookings', bookingId, { status });
-}
-
-export async function updateRoomStatus(roomId: string, status: string): Promise<Room> {
-  return update<Room>('rooms', roomId, { status });
-}
-
-// Room specific functions
-export async function fetchRooms(): Promise<Room[]> {
-  try {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*');
-      
-    if (error) throw error;
-    return data as unknown as Room[];
-  } catch (error) {
+  if (error) {
     console.error('Error fetching rooms:', error);
-    throw new Error(handleError(error));
+    throw error;
   }
-}
+  
+  return (data || []).map(room => ({
+    ...room,
+    status: room.status as 'available' | 'occupied' | 'maintenance'
+  })) as Room[];
+};
 
-export async function fetchRoomById(id: string): Promise<Room> {
-  try {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error) throw error;
-    return data as unknown as Room;
-  } catch (error) {
+export const fetchRoomById = async (id: string): Promise<Room> => {
+  const { data, error } = await supabase
+    .from('rooms')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
     console.error(`Error fetching room with ID ${id}:`, error);
-    throw new Error(handleError(error));
+    throw error;
   }
-}
+  
+  return {
+    ...data,
+    status: data.status as 'available' | 'occupied' | 'maintenance'
+  } as Room;
+};
 
-// Cleaning tasks specific functions
-export async function fetchCleaningTasks(): Promise<CleaningTask[]> {
-  try {
-    const { data, error } = await supabase
-      .from('cleaning_tasks')
-      .select('*');
-      
-    if (error) throw error;
-    return data as unknown as CleaningTask[];
-  } catch (error) {
-    console.error('Error fetching cleaning tasks:', error);
-    throw new Error(handleError(error));
+export const fetchRoomByNumber = async (number: string): Promise<Room> => {
+  const { data, error } = await supabase
+    .from('rooms')
+    .select('*')
+    .eq('number', number)
+    .single();
+  
+  if (error) {
+    console.error(`Error fetching room with number ${number}:`, error);
+    throw error;
   }
-}
+  
+  return {
+    ...data,
+    status: data.status as 'available' | 'occupied' | 'maintenance'
+  } as Room;
+};
 
-export async function updateCleaningTaskStatus(taskId: string, status: string): Promise<CleaningTask> {
-  return update<CleaningTask>('cleaning_tasks', taskId, { status });
-}
+export const fetchBookings = async (): Promise<Booking[]> => {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, rooms(number, property:type)');
+  
+  if (error) {
+    console.error('Error fetching bookings:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
 
-// Owner specific functions
-export async function fetchOwners(): Promise<Owner[]> {
-  try {
-    const { data, error } = await supabase
-      .from('owners')
-      .select('*')
-      .order('name', { ascending: true });
-      
-    if (error) throw error;
-    return data as Owner[];
-  } catch (error) {
+export const fetchBookingById = async (id: string): Promise<Booking> => {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, rooms(number, property:type)')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error(`Error fetching booking with ID ${id}:`, error);
+    throw error;
+  }
+  
+  return data;
+};
+
+export const fetchTodayCheckins = async (): Promise<Booking[]> => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, rooms(number, property:type)')
+    .eq('check_in', today)
+    .eq('status', 'confirmed');
+  
+  if (error) {
+    console.error('Error fetching today\'s check-ins:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchTodayCheckouts = async (): Promise<Booking[]> => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, rooms(number, property:type)')
+    .eq('check_out', today)
+    .eq('status', 'checked-in');
+  
+  if (error) {
+    console.error('Error fetching today\'s check-outs:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*');
+  
+  if (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchOwners = async (): Promise<Owner[]> => {
+  const { data, error } = await supabase
+    .from('owners')
+    .select('*');
+  
+  if (error) {
     console.error('Error fetching owners:', error);
-    throw new Error(handleError(error));
+    throw error;
   }
-}
+  
+  return data || [];
+};
 
-export async function fetchPropertyOwnership(): Promise<PropertyOwnership[]> {
-  try {
-    const { data: ownershipData, error } = await supabase
-      .from('property_ownership')
-      .select('*');
-      
-    if (error) throw error;
-    
-    // Transform the data manually since we're having issues with complex selects
-    const transformedData = ownershipData.map(item => ({
-      ...item,
-      owners: undefined, // Will be populated if needed elsewhere
-      rooms: undefined // Will be populated if needed elsewhere
-    })) as unknown as PropertyOwnership[];
-    
-    return transformedData;
-  } catch (error) {
-    console.error('Error fetching property ownerships:', error);
-    throw new Error(handleError(error));
+export const fetchExpenses = async (): Promise<Expense[]> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .order('date', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching expenses:', error);
+    throw error;
   }
-}
+  
+  return data || [];
+};
+
+export const fetchCleaningTasks = async (): Promise<CleaningTask[]> => {
+  const { data, error } = await supabase
+    .from('cleaning_tasks')
+    .select('*, rooms(number, property:type), users(name)');
+  
+  if (error) {
+    console.error('Error fetching cleaning tasks:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchPropertyOwnership = async (): Promise<PropertyOwnership[]> => {
+  const { data, error } = await supabase
+    .from('property_ownership')
+    .select('*, rooms(number), owners(name)');
+  
+  if (error) {
+    console.error('Error fetching property ownership:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const updateBookingStatus = async (id: string, status: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status })
+    .eq('id', id);
+  
+  if (error) {
+    console.error(`Error updating booking status for ID ${id}:`, error);
+    throw error;
+  }
+};
+
+export const updateRoomStatus = async (id: string, status: string): Promise<void> => {
+  const { error } = await supabase
+    .from('rooms')
+    .update({ status })
+    .eq('id', id);
+  
+  if (error) {
+    console.error(`Error updating room status for ID ${id}:`, error);
+    throw error;
+  }
+};
+
+export const updateCleaningTaskStatus = async (id: string, status: string): Promise<void> => {
+  const { error } = await supabase
+    .from('cleaning_tasks')
+    .update({ status })
+    .eq('id', id);
+  
+  if (error) {
+    console.error(`Error updating cleaning task status for ID ${id}:`, error);
+    throw error;
+  }
+};

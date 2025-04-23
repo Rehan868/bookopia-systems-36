@@ -1,104 +1,50 @@
-
 import React from 'react';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { TodayActivity } from '@/components/dashboard/TodayActivity';
-import { RecentBookings } from '@/components/dashboard/RecentBookings';
-import { OccupancyChart } from '@/components/dashboard/OccupancyChart';
-import { QuickButtons } from '@/components/dashboard/QuickButtons';
-import { Loader, BedDouble, ArrowDownToLine, ArrowUpFromLine, Percent } from 'lucide-react';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { DashboardStats } from '@/services/supabase-types';
-
-export default function Dashboard() {
-  const { data: stats, isLoading, error } = useDashboardStats();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading dashboard data...</span>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="p-6 text-center">
-        <div className="text-red-500 mb-2">Failed to load dashboard data</div>
-        <button
-          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-  
-  const safeStats: DashboardStats = stats || {
-    totalRooms: 0,
-    availableRooms: 0,
-    occupiedRooms: 0,
-    todayCheckins: 0,
-    todayCheckouts: 0,
-    revenue: { today: 0, thisWeek: 0, thisMonth: 0 },
-    occupancyRate: 0,
-    recentBookings: [],
-    weeklyOccupancyTrend: [0, 0, 0, 0, 0, 0, 0]
-  };
-  
-  const weeklyOccupancyTrend = stats?.weeklyOccupancyTrend || [0, 0, 0, 0, 0, 0, 0];
-  
-  return (
-    <div className="animate-fade-in space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Available Rooms" 
-          value={safeStats.availableRooms} 
-          total={safeStats.totalRooms} 
-          trend="up"
-          trendDirection="up"
-          trendValue="+2 from yesterday"
-          icon={BedDouble}
-        />
-        <StatCard 
-          title="Today's Check-ins" 
-          value={safeStats.todayCheckins} 
-          trend="neutral"
-          trendDirection="neutral"
-          trendValue="Same as yesterday"
-          icon={ArrowDownToLine}
-        />
-        <StatCard 
-          title="Today's Check-outs" 
-          value={safeStats.todayCheckouts} 
-          trend="up"
-          trendDirection="up"
-          trendValue="+2 from yesterday"
-          icon={ArrowUpFromLine}
-        />
-        <StatCard 
-          title="Occupancy Rate" 
-          value={`${Math.round(safeStats.occupancyRate)}%`} 
-          trend="up"
-          trendDirection="up"
-          trendValue="+3.2% from last week"
-          icon={Percent}
-        />
+import { StatCard } from "@/components/dashboard/StatCard";
+import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
+import { QuickButtons } from "@/components/dashboard/QuickButtons";
+import { ActivitySection } from "@/components/dashboard/ActivitySection";
+import { RecentBookings } from "@/components/dashboard/RecentBookings";
+import { BedDouble, ArrowDownToLine, ArrowUpFromLine, Percent } from "lucide-react";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+const Dashboard = () => {
+  const {
+    data: stats,
+    isLoading
+  } = useDashboardStats();
+  return <div className="animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Welcome back to your hotel management dashboard</p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="Available Rooms" value={isLoading ? "Loading..." : stats?.availableRooms || 0} description={`Out of ${stats?.totalRooms || 0} total rooms`} icon={BedDouble} className="animate-slide-up" />
+        
+        <StatCard title="Today's Check-ins" value={isLoading ? "Loading..." : stats?.todayCheckIns || 0} description="3 are arriving in the morning" icon={ArrowDownToLine} className="animate-slide-up [animation-delay:100ms]" />
+        
+        <StatCard title="Today's Check-outs" value={isLoading ? "Loading..." : stats?.todayCheckOuts || 0} description="All scheduled before noon" icon={ArrowUpFromLine} className="animate-slide-up [animation-delay:200ms]" />
+        
+        <StatCard title="Occupancy Rate" value={isLoading ? "Loading..." : `${stats?.occupancyRate || 0}%`} trend="up" trendValue={stats?.weeklyOccupancyTrend || "+0%"} icon={Percent} className="animate-slide-up [animation-delay:300ms]" />
+      </div>
+      
+      {/* Chart and Quick Buttons Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
           <OccupancyChart />
-          <RecentBookings />
         </div>
-        <div className="space-y-6">
+        <div className="mx-0 my-0 px-0 py-0 rounded-none">
           <QuickButtons />
-          <TodayActivity />
         </div>
       </div>
-    </div>
-  );
-}
+      
+      {/* Today's Activity Section */}
+      <ActivitySection />
+      
+      {/* Recent Bookings Section */}
+      <div className="mt-6">
+        <RecentBookings />
+      </div>
+    </div>;
+};
+export default Dashboard;

@@ -75,7 +75,7 @@ export function AddEditBookingForm({ mode, bookingData }: AddEditBookingFormProp
     sendConfirmation: bookingData?.sendConfirmation !== undefined ? bookingData.sendConfirmation : true,
     guestDocument: null,
     amountPaid: bookingData?.amountPaid || 0,
-    remainingAmount: bookingData?.remainingAmount || 0,
+    remainingAmount: bookingData?.remainingAmount || bookingData?.totalAmount || 0
   };
   
   const [formData, setFormData] = useState<BookingFormData>(defaultData);
@@ -550,6 +550,44 @@ export function AddEditBookingForm({ mode, bookingData }: AddEditBookingFormProp
                   required
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="amountPaid">Amount Paid*</Label>
+                <Input
+                  id="amountPaid"
+                  name="amountPaid"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.amountPaid}
+                  onChange={(e) => {
+                    const amountPaid = Number(e.target.value);
+                    const remainingAmount = Math.max(0, formData.totalAmount - amountPaid);
+                    setFormData({
+                      ...formData,
+                      amountPaid,
+                      remainingAmount
+                    });
+                  }}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="remainingAmount">Remaining Amount*</Label>
+                <Input
+                  id="remainingAmount"
+                  name="remainingAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.remainingAmount}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="bg-muted"
+                  required
+                />
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="securityDeposit">Security Deposit</Label>
@@ -561,33 +599,6 @@ export function AddEditBookingForm({ mode, bookingData }: AddEditBookingFormProp
                   step="0.01"
                   value={formData.securityDeposit}
                   onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="amountPaid">Amount Paid*</Label>
-                <Input
-                  id="amountPaid"
-                  name="amountPaid"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.amountPaid}
-                  onChange={handleNumberChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="remainingAmount">Remaining Amount*</Label>
-                <Input
-                  id="remainingAmount"
-                  name="remainingAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.remainingAmount}
-                  onChange={handleNumberChange}
-                  required
                 />
               </div>
             </CardContent>

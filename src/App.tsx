@@ -1,6 +1,5 @@
 import { Route, Routes, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/use-auth';
-import { NotificationProvider } from './components/layout/NotificationProvider';
 
 // Regular staff pages
 import Dashboard from './pages/Dashboard';
@@ -69,34 +68,46 @@ function App() {
         <Route path="/owner/login" element={<OwnerLogin />} />
         
         {/* Owner routes (protected) */}
-        <Route path="/owner" element={
-          <ProtectedRoute requiredRole={['owner']}>
-            <NotifiedLayout>
-              <OwnerLayout />
-            </NotifiedLayout>
-          </ProtectedRoute>
-        }>
-          <Route path="dashboard" element={<OwnerDashboard />} />
-          <Route path="bookings" element={<OwnerBookings />} />
-          <Route path="cleaning" element={<OwnerCleaningStatus />} />
-          <Route path="availability" element={<OwnerAvailability />} />
-          <Route path="reports" element={<OwnerReports />} />
+        <Route path="/owner" element={<OwnerLayout />}>
+          <Route path="dashboard" element={
+            <ProtectedRoute requiredRole={['owner']}>
+              <OwnerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="bookings" element={
+            <ProtectedRoute requiredRole={['owner']}>
+              <OwnerBookings />
+            </ProtectedRoute>
+          } />
+          <Route path="cleaning" element={
+            <ProtectedRoute requiredRole={['owner']}>
+              <OwnerCleaningStatus />
+            </ProtectedRoute>
+          } />
+          <Route path="availability" element={
+            <ProtectedRoute requiredRole={['owner']}>
+              <OwnerAvailability />
+            </ProtectedRoute>
+          } />
+          <Route path="reports" element={
+            <ProtectedRoute requiredRole={['owner']}>
+              <OwnerReports />
+            </ProtectedRoute>
+          } />
         </Route>
         
         {/* Main app layout (staff routes) */}
         <Route path="/" element={
           <ProtectedRoute>
-            <NotifiedLayout>
-              <div className="grid h-screen grid-cols-[280px_1fr] overflow-hidden">
-                <Sidebar />
-                <div className="flex flex-col overflow-hidden">
-                  <Header />
-                  <main className="flex-1 overflow-y-auto bg-muted/20 p-6">
-                    <Outlet />
-                  </main>
-                </div>
+            <div className="grid h-screen grid-cols-[280px_1fr] overflow-hidden">
+              <Sidebar />
+              <div className="flex flex-col overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-y-auto bg-muted/20 p-6">
+                  <Outlet />
+                </main>
               </div>
-            </NotifiedLayout>
+            </div>
           </ProtectedRoute>
         }>
           <Route index element={<Dashboard />} />
@@ -145,17 +156,6 @@ function App() {
     </AuthProvider>
   );
 }
-
-// NotifiedLayout component wraps both staff and owner layouts with NotificationProvider
-const NotifiedLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  
-  return (
-    <NotificationProvider userId={user?.id}>
-      {children}
-    </NotificationProvider>
-  );
-};
 
 const ProtectedRoute = ({ 
   children, 

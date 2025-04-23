@@ -1,19 +1,72 @@
 
 import { useState, useEffect } from 'react';
-import { fetchBookings, fetchBookingById, fetchTodayCheckins, fetchTodayCheckouts, create, update, remove, createAuditLog } from '../services/api';
-import { Booking } from '../services/supabase-types';
+
+// Mock data for bookings
+const mockBookings = [
+  {
+    id: '1',
+    booking_number: 'BK-2023-0001',
+    guest_name: 'John Smith',
+    check_in: '2023-06-15',
+    check_out: '2023-06-18',
+    status: 'confirmed',
+    amount: 450,
+    rooms: { number: '101', property: 'Marina Tower' }
+  },
+  {
+    id: '2',
+    booking_number: 'BK-2023-0002',
+    guest_name: 'Emma Johnson',
+    check_in: '2023-06-14',
+    check_out: '2023-06-16',
+    status: 'checked-in',
+    amount: 350,
+    rooms: { number: '205', property: 'Downtown Heights' }
+  },
+  {
+    id: '3',
+    booking_number: 'BK-2023-0003',
+    guest_name: 'Michael Chen',
+    check_in: '2023-06-12',
+    check_out: '2023-06-13',
+    status: 'checked-out',
+    amount: 175,
+    rooms: { number: '304', property: 'Marina Tower' }
+  },
+  {
+    id: '4',
+    booking_number: 'BK-2023-0004',
+    guest_name: 'Sarah Davis',
+    check_in: '2023-06-18',
+    check_out: '2023-06-20',
+    status: 'confirmed',
+    amount: 300,
+    rooms: { number: '102', property: 'Downtown Heights' }
+  },
+  {
+    id: '5',
+    booking_number: 'BK-2023-0005',
+    guest_name: 'David Wilson',
+    check_in: '2023-06-10',
+    check_out: '2023-06-15',
+    status: 'checked-out',
+    amount: 625,
+    rooms: { number: '401', property: 'Marina Tower' }
+  },
+];
 
 export function useBookings() {
-  const [data, setData] = useState<Booking[] | null>(null);
+  const [data, setData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const bookings = await fetchBookings();
-        setData(bookings);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setData(mockBookings);
         setIsLoading(false);
       } catch (err) {
         setError(err);
@@ -24,86 +77,31 @@ export function useBookings() {
     fetchData();
   }, []);
 
-  // Function to add a new booking
-  const addBooking = async (booking: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      setIsLoading(true);
-      const newBooking = await create<Booking>('bookings', booking);
-      setData(prevData => prevData ? [...prevData, newBooking] : [newBooking]);
-      
-      // Create audit log
-      const userId = localStorage.getItem('userId');
-      await createAuditLog(userId, 'create', 'booking', newBooking.id, { booking_number: newBooking.booking_number });
-      
-      setIsLoading(false);
-      return newBooking;
-    } catch (err) {
-      setError(err);
-      setIsLoading(false);
-      throw err;
-    }
-  };
-
-  // Function to update a booking
-  const updateBooking = async (id: string, bookingData: Partial<Booking>) => {
-    try {
-      setIsLoading(true);
-      const updatedBooking = await update<Booking>('bookings', id, bookingData);
-      setData(prevData => 
-        prevData ? prevData.map(booking => 
-          booking.id === id ? { ...booking, ...updatedBooking } : booking
-        ) : null
-      );
-      
-      // Create audit log
-      const userId = localStorage.getItem('userId');
-      await createAuditLog(userId, 'update', 'booking', id, { booking_number: updatedBooking.booking_number });
-      
-      setIsLoading(false);
-      return updatedBooking;
-    } catch (err) {
-      setError(err);
-      setIsLoading(false);
-      throw err;
-    }
-  };
-
-  // Function to delete a booking
-  const deleteBooking = async (id: string) => {
-    try {
-      setIsLoading(true);
-      await remove('bookings', id);
-      setData(prevData => 
-        prevData ? prevData.filter(booking => booking.id !== id) : null
-      );
-      
-      // Create audit log
-      const userId = localStorage.getItem('userId');
-      await createAuditLog(userId, 'delete', 'booking', id);
-      
-      setIsLoading(false);
-    } catch (err) {
-      setError(err);
-      setIsLoading(false);
-      throw err;
-    }
-  };
-
-  return { data, isLoading, error, addBooking, updateBooking, deleteBooking };
+  return { data, isLoading, error };
 }
 
-// Add the useBooking hook for individual booking data
+// Add the missing useBooking hook for individual booking data
 export function useBooking(id: string) {
-  const [data, setData] = useState<Booking | null>(null);
+  const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const booking = await fetchBookingById(id);
-        setData(booking);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Find the booking with the matching ID
+        const booking = mockBookings.find(booking => booking.id === id);
+        
+        if (booking) {
+          setData(booking);
+        } else {
+          setError(new Error('Booking not found'));
+        }
+        
         setIsLoading(false);
       } catch (err) {
         setError(err);
@@ -114,42 +112,29 @@ export function useBooking(id: string) {
     fetchData();
   }, [id]);
 
-  // Function to update a booking
-  const updateBooking = async (bookingData: Partial<Booking>) => {
-    if (!id) return;
-    
-    try {
-      setIsLoading(true);
-      const updatedBooking = await update<Booking>('bookings', id, bookingData);
-      setData(prevData => prevData ? { ...prevData, ...updatedBooking } : updatedBooking);
-      
-      // Create audit log
-      const userId = localStorage.getItem('userId');
-      await createAuditLog(userId, 'update', 'booking', id, { booking_number: updatedBooking.booking_number });
-      
-      setIsLoading(false);
-      return updatedBooking;
-    } catch (err) {
-      setError(err);
-      setIsLoading(false);
-      throw err;
-    }
-  };
-
-  return { data, isLoading, error, updateBooking };
+  return { data, isLoading, error };
 }
 
 // Add the useTodayCheckins hook
 export function useTodayCheckins() {
-  const [data, setData] = useState<Booking[] | null>(null);
+  const [data, setData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const checkins = await fetchTodayCheckins();
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Filter bookings for today's check-ins
+        // In a real app, this would be done on the server
+        const today = new Date().toISOString().split('T')[0];
+        const checkins = mockBookings.filter(
+          booking => booking.check_in.split('T')[0] === today && booking.status === 'confirmed'
+        );
+        
         setData(checkins);
         setIsLoading(false);
       } catch (err) {
@@ -166,15 +151,24 @@ export function useTodayCheckins() {
 
 // Add the useTodayCheckouts hook
 export function useTodayCheckouts() {
-  const [data, setData] = useState<Booking[] | null>(null);
+  const [data, setData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    // Simulate API call with a delay
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const checkouts = await fetchTodayCheckouts();
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Filter bookings for today's check-outs
+        // In a real app, this would be done on the server
+        const today = new Date().toISOString().split('T')[0];
+        const checkouts = mockBookings.filter(
+          booking => booking.check_out.split('T')[0] === today && booking.status === 'checked-in'
+        );
+        
         setData(checkouts);
         setIsLoading(false);
       } catch (err) {

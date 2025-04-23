@@ -19,20 +19,7 @@ const data = [
   { name: 'Dec', occupancy: 75, revenue: 5000 },
 ];
 
-interface OccupancyChartProps {
-  data?: number[];
-}
-
-export function OccupancyChart(props: OccupancyChartProps = {}) {
-  // If custom data is provided, transform it to the expected format
-  const chartData = props.data 
-    ? props.data.map((value, index) => ({
-        name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
-        occupancy: value,
-        revenue: value * 100 // Simplified calculation for demonstration
-      }))
-    : data;
-
+export function OccupancyChart() {
   return (
     <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
       <CardHeader className="pb-4">
@@ -43,7 +30,7 @@ export function OccupancyChart(props: OccupancyChartProps = {}) {
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={chartData}
+              data={data}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
             >
               <defs>

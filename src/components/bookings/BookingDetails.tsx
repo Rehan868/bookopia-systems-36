@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useBooking } from '@/hooks/useBookings';
@@ -186,15 +187,6 @@ export function BookingDetails() {
             <div className="space-y-2">
               <h3 className="font-medium">Payment Status</h3>
               <p className="text-muted-foreground">{booking.payment_status}</p>
-            </div>
-            {/* Add display for Amount Paid and Remaining Amount */}
-            <div className="space-y-2">
-              <h3 className="font-medium">Amount Paid</h3>
-              <p className="text-muted-foreground">${booking.amountPaid?.toFixed(2) || '0.00'}</p>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-medium">Remaining Amount</h3>
-              <p className="text-muted-foreground">${booking.remainingAmount?.toFixed(2) || '0.00'}</p>
             </div>
           </CardContent>
         </Card>
