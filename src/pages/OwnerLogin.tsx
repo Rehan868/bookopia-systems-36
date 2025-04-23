@@ -6,31 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/use-auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 export default function OwnerLogin() {
-  const { ownerLogin, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { ownerLogin, isAuthenticated, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      navigate('/owner/dashboard');
+      if (user?.role === 'owner') {
+        navigate('/owner/dashboard');
+      } else {
+        // If they're authenticated but not an owner, redirect to staff dashboard
+        navigate('/');
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive"
-      });
+      setError("Please enter both email and password");
       return;
     }
     
@@ -38,17 +43,9 @@ export default function OwnerLogin() {
     
     try {
       await ownerLogin(email, password);
-      toast({
-        title: "Success!",
-        description: "You have successfully logged in."
-      });
-      navigate('/owner/dashboard');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid credentials. Please try again.",
-        variant: "destructive"
-      });
+      // Navigation happens in the useEffect when isAuthenticated and role changes
+    } catch (error: any) {
+      setError(error.message || "Invalid credentials. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +67,12 @@ export default function OwnerLogin() {
           <h1 className="text-3xl font-bold text-primary">Owner Portal</h1>
           <p className="text-muted-foreground mt-2">Property Owner Access</p>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
@@ -102,7 +105,12 @@ export default function OwnerLogin() {
           </div>
           
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Log in"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logging in...
+              </>
+            ) : "Log in"}
           </Button>
         </form>
         

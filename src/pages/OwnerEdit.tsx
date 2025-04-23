@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,11 +14,16 @@ import {
   FormMessage 
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { OwnerRoomsList } from '@/components/owners/OwnerRoomsList';
 
 const ownerFormSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
@@ -37,8 +41,9 @@ const ownerFormSchema = z.object({
 });
 
 const OwnerEdit = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: owner, isLoading, error } = useOwner(id || '');
+  const { id } = useParams();
+  const ownerId = id ? parseInt(id, 10) : 0;
+  const { data: owner, isLoading, error } = useOwner(ownerId);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);

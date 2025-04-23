@@ -1,3 +1,4 @@
+
 import { Route, Routes, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/use-auth';
 
@@ -30,6 +31,7 @@ import ChannelManager from './pages/ChannelManager';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
@@ -65,6 +67,7 @@ function App() {
       <Routes>
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/owner/login" element={<OwnerLogin />} />
         
         {/* Owner routes (protected) */}
@@ -121,33 +124,105 @@ function App() {
           <Route path="rooms/:id/edit" element={<RoomEdit />} />
           <Route path="availability" element={<Availability />} />
           <Route path="cleaning" element={<CleaningStatus />} />
-          <Route path="owners" element={<Owners />} />
-          <Route path="owners/add" element={<OwnerAdd />} />
-          <Route path="owners/:id" element={<OwnerView />} />
-          <Route path="owners/:id/edit" element={<OwnerEdit />} />
-          <Route path="users" element={<Users />} />
-          <Route path="users/add" element={<UserAdd />} />
-          <Route path="users/:id" element={<UserView />} />
-          <Route path="users/:id/edit" element={<UserEdit />} />
+          <Route path="owners" element={
+            <ProtectedRoute requiredRole={['admin', 'manager']}>
+              <Owners />
+            </ProtectedRoute>
+          } />
+          <Route path="owners/add" element={
+            <ProtectedRoute requiredRole={['admin', 'manager']}>
+              <OwnerAdd />
+            </ProtectedRoute>
+          } />
+          <Route path="owners/:id" element={
+            <ProtectedRoute requiredRole={['admin', 'manager']}>
+              <OwnerView />
+            </ProtectedRoute>
+          } />
+          <Route path="owners/:id/edit" element={
+            <ProtectedRoute requiredRole={['admin', 'manager']}>
+              <OwnerEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="users" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <Users />
+            </ProtectedRoute>
+          } />
+          <Route path="users/add" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <UserAdd />
+            </ProtectedRoute>
+          } />
+          <Route path="users/:id" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <UserView />
+            </ProtectedRoute>
+          } />
+          <Route path="users/:id/edit" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <UserEdit />
+            </ProtectedRoute>
+          } />
           <Route path="expenses" element={<Expenses />} />
           <Route path="expenses/add" element={<ExpenseAdd />} />
           <Route path="expenses/:id" element={<ExpenseView />} />
           <Route path="expenses/:id/edit" element={<ExpenseEdit />} />
           <Route path="reports" element={<Reports />} />
           <Route path="channels" element={<ChannelManager />} />
-          <Route path="audit-logs" element={<AuditLogs />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="audit-logs" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <AuditLogs />
+            </ProtectedRoute>
+          } />
+          <Route path="settings" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <Settings />
+            </ProtectedRoute>
+          } />
           <Route path="profile" element={<Profile />} />
           
           {/* Settings routes */}
-          <Route path="settings/properties/add" element={<PropertyAdd />} />
-          <Route path="settings/properties/:id/edit" element={<PropertyEdit />} />
-          <Route path="settings/room-types/add" element={<RoomTypeAdd />} />
-          <Route path="settings/room-types/:id/edit" element={<RoomTypeEdit />} />
-          <Route path="settings/email-templates/:id" element={<EmailTemplateEdit />} />
-          <Route path="settings/sms-templates/:id" element={<SmsTemplateEdit />} />
-          <Route path="settings/user-roles/add" element={<UserRoleAdd />} />
-          <Route path="settings/user-roles/:id/edit" element={<UserRoleEdit />} />
+          <Route path="settings/properties/add" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <PropertyAdd />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/properties/:id/edit" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <PropertyEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/room-types/add" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <RoomTypeAdd />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/room-types/:id/edit" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <RoomTypeEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/email-templates/:id" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <EmailTemplateEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/invoice-templates/:id" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <SmsTemplateEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/user-roles/add" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <UserRoleAdd />
+            </ProtectedRoute>
+          } />
+          <Route path="settings/user-roles/:id/edit" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <UserRoleEdit />
+            </ProtectedRoute>
+          } />
         </Route>
         
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -166,7 +241,7 @@ const ProtectedRoute = ({
 }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   
-  // Don't redirect until auth state is loaded from localStorage
+  // Don't redirect until auth state is loaded
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -177,7 +252,7 @@ const ProtectedRoute = ({
     return <Navigate to="/login" />;
   }
   
-  if (requiredRole && (!user || !requiredRole.includes(user.role))) {
+  if (requiredRole && user && !requiredRole.includes(user.role)) {
     // Redirect staff to staff dashboard or owners to owner dashboard
     if (user.role === 'owner') {
       return <Navigate to="/owner/dashboard" />;

@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useUsers } from '@/hooks/useUsers';
+import { useUsers, useDeleteUser } from '@/hooks/useUsers';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ const Users = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: allUsers, isLoading, error } = useUsers();
+  const deleteUser = useDeleteUser();
   
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('q') || "");
   const [roleFilter, setRoleFilter] = useState<string>(searchParams.get('role') || "all");
@@ -66,14 +67,14 @@ const Users = () => {
     if (roleFilter !== 'all') params.set('role', roleFilter);
     
     setSearchParams(params, { replace: true });
-  }, [searchQuery, roleFilter, allUsers]);
+  }, [searchQuery, roleFilter, allUsers, setSearchParams]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Admin': return 'bg-blue-100 text-blue-800';
-      case 'Booking Agent': return 'bg-green-100 text-green-800';
-      case 'Owner': return 'bg-purple-100 text-purple-800';
-      case 'Cleaning Staff': return 'bg-yellow-100 text-yellow-800';
+      case 'admin': return 'bg-blue-100 text-blue-800';
+      case 'manager': return 'bg-green-100 text-green-800';
+      case 'owner': return 'bg-purple-100 text-purple-800';
+      case 'staff': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -97,13 +98,8 @@ const Users = () => {
     setRoleFilter(role === roleFilter ? 'all' : role);
   };
   
-  const handleDeleteUser = (userId: string) => {
-    // In a real app, this would call an API to delete the user
-    toast({
-      title: "User Deleted",
-      description: `User ID ${userId} has been removed.`,
-      variant: "destructive"
-    });
+  const handleDeleteUser = async (userId: string) => {
+    await deleteUser.mutate(userId);
   };
 
   return (
@@ -144,18 +140,18 @@ const Users = () => {
               All Roles
             </Button>
             <Button 
-              variant={roleFilter === 'Admin' ? "default" : "outline"} 
+              variant={roleFilter === 'admin' ? "default" : "outline"} 
               className="flex-1"
-              onClick={() => handleRoleFilter('Admin')}
+              onClick={() => handleRoleFilter('admin')}
             >
               Admins
             </Button>
             <Button 
-              variant={roleFilter === 'Booking Agent' ? "default" : "outline"} 
+              variant={roleFilter === 'staff' ? "default" : "outline"} 
               className="flex-1"
-              onClick={() => handleRoleFilter('Booking Agent')}
+              onClick={() => handleRoleFilter('staff')}
             >
-              Booking Agents
+              Staff
             </Button>
           </div>
         </div>
@@ -214,7 +210,7 @@ const Users = () => {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={user.avatar_url || undefined} />
+                        <AvatarImage src={user.avatar || undefined} />
                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                       </Avatar>
                       <span>{user.name}</span>
@@ -232,7 +228,7 @@ const Users = () => {
                           </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/users/edit/${user.id}`}>
+                          <Link to={`/users/${user.id}/edit`}>
                             <Pencil className="h-4 w-4 mr-1" />
                             Edit
                           </Link>

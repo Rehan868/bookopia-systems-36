@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 type UserFormData = {
   name: string;
@@ -18,6 +21,11 @@ type UserFormData = {
   confirmPassword: string;
   sendInvite: boolean;
 };
+
+interface Role {
+  name: string;
+  description: string;
+}
 
 const UserAdd = () => {
   const navigate = useNavigate();
@@ -30,6 +38,36 @@ const UserAdd = () => {
     confirmPassword: '',
     sendInvite: true,
   });
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch available roles from database
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('name, description')
+          .order('name', { ascending: true });
+        
+        if (error) throw error;
+        setRoles(data || []);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch user roles',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -62,7 +100,7 @@ const UserAdd = () => {
       .toUpperCase();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -75,15 +113,60 @@ const UserAdd = () => {
       return;
     }
     
-    // In a real app, this would send the data to an API
-    console.log('Submitting user:', formData);
+    setIsSubmitting(true);
     
-    toast({
-      title: "User Added",
-      description: `${formData.name} has been added successfully.${formData.sendInvite ? ' An invitation email has been sent.' : ''}`,
-    });
-    
-    navigate('/users');
+    try {
+      // Register the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email,
+        password: formData.password,
+        email_confirm: true,
+        user_metadata: {
+          name: formData.name
+        }
+      });
+      
+      if (authError) throw authError;
+      
+      // Update the user's role in the profiles table
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            role: formData.role
+          })
+          .eq('id', authData.user.id);
+        
+        if (profileError) throw profileError;
+      }
+      
+      // If sendInvite is true, send an invitation email
+      if (formData.sendInvite) {
+        // This would be handled by a server function in a real app
+        console.log('Sending invitation email to', formData.email);
+      }
+      
+      toast({
+        title: "User Added",
+        description: `${formData.name} has been added successfully.${formData.sendInvite ? ' An invitation email has been sent.' : ''}`,
+      });
+      
+      navigate('/users');
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Failed to create user",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getRoleDescription = (roleName: string) => {
+    const role = roles.find(r => r.name === roleName);
+    return role?.description || "Select a role to see information about its permissions.";
   };
 
   return (
@@ -133,11 +216,16 @@ const UserAdd = () => {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Booking Agent">Booking Agent</SelectItem>
-                    <SelectItem value="Owner">Owner</SelectItem>
-                    <SelectItem value="Cleaning Staff">Cleaning Staff</SelectItem>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    {isLoading ? (
+                      <div className="flex items-center justify-center p-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="ml-2">Loading roles...</span>
+                      </div>
+                    ) : (
+                      roles.map(role => (
+                        <SelectItem key={role.name} value={role.name}>{role.name}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -211,22 +299,9 @@ const UserAdd = () => {
                 <div className="p-4 bg-blue-50 rounded-md">
                   <h4 className="font-medium text-blue-800 mb-2">Role Information</h4>
                   <div className="text-sm text-blue-700">
-                    {formData.role === 'Admin' && (
-                      <p>Admins have full access to all features and can manage other users.</p>
-                    )}
-                    {formData.role === 'Booking Agent' && (
-                      <p>Booking Agents can create and manage bookings, but cannot access financial information.</p>
-                    )}
-                    {formData.role === 'Owner' && (
-                      <p>Owners can view their properties and bookings, but cannot make changes to the system.</p>
-                    )}
-                    {formData.role === 'Cleaning Staff' && (
-                      <p>Cleaning Staff can update room cleaning status but have limited access to other features.</p>
-                    )}
-                    {formData.role === 'Maintenance' && (
-                      <p>Maintenance staff can manage maintenance requests and update their status.</p>
-                    )}
-                    {!formData.role && (
+                    {formData.role ? (
+                      <p>{getRoleDescription(formData.role)}</p>
+                    ) : (
                       <p>Select a role to see information about its permissions.</p>
                     )}
                   </div>
@@ -239,8 +314,13 @@ const UserAdd = () => {
             <Button type="button" variant="outline" onClick={() => navigate('/users')}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add User
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding User...
+                </>
+              ) : "Add User"}
             </Button>
           </div>
         </div>

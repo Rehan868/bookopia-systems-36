@@ -1,93 +1,201 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+import { Session, User } from '@supabase/supabase-js';
 
-interface User {
+interface UserData {
   id: string;
   name: string;
   email: string;
   role: string;
+  avatar?: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: User | null;
+  user: UserData | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   ownerLogin: (email: string, password: string) => Promise<void>;
+  session: Session | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem('user');
-    const storedIsAuthenticated = localStorage.getItem('isAuthenticated');
-    
-    if (storedUser && storedIsAuthenticated === 'true') {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    // Set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          setIsAuthenticated(true);
+          
+          // Fetch the user profile from our profiles table
+          try {
+            setTimeout(async () => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+              
+              if (profile) {
+                setUser({
+                  id: profile.id,
+                  name: profile.name,
+                  email: profile.email,
+                  role: profile.role,
+                  avatar: profile.avatar
+                });
+              }
+            }, 0);
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+          }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+    );
+
+    // Check for an existing session
+    const initAuth = async () => {
+      try {
+        setIsLoading(true);
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (currentSession?.user) {
+          setSession(currentSession);
+          setIsAuthenticated(true);
+          
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+          
+          if (profile) {
+            setUser({
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role,
+              avatar: profile.avatar
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error during auth initialization:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Clean up the subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    // This is a mock login function - in a real app, this would call your API
-    // Simulate API call with delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo purposes, we'll just accept any credentials
-    const mockUser = {
-      id: '1',
-      name: 'Admin User',
-      email: email,
-      role: 'admin',
-    };
-    
-    // Store in local storage
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    // Update state
-    setUser(mockUser);
-    setIsAuthenticated(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Login successful",
+        description: "You have been logged in successfully"
+      });
+      
+      return;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Failed to log in. Please check your credentials.",
+        variant: "destructive"
+      });
+      throw error;
+    }
   };
   
   const ownerLogin = async (email: string, password: string) => {
-    // This is a mock login function for owners
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser = {
-      id: '2',
-      name: 'Owner User',
-      email: email,
-      role: 'owner',
-    };
-    
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    setUser(mockUser);
-    setIsAuthenticated(true);
+    try {
+      // Use the same login method but we'll check role afterward
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      
+      // Check if user has owner role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profile?.role !== 'owner') {
+        // If not an owner, sign out and throw error
+        await supabase.auth.signOut();
+        throw new Error('Access denied. Owner credentials required.');
+      }
+      
+      toast({
+        title: "Owner login successful",
+        description: "You have been logged in as an owner"
+      });
+      
+      return;
+    } catch (error: any) {
+      console.error('Owner login error:', error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Failed to log in as owner. Please check your credentials.",
+        variant: "destructive"
+      });
+      throw error;
+    }
   };
   
-  const logout = () => {
-    // Remove from local storage
-    localStorage.removeItem('user');
-    localStorage.removeItem('isAuthenticated');
-    
-    // Update state
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully"
+      });
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: error.message || "An error occurred during logout",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout, ownerLogin }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout, ownerLogin, session }}>
       {children}
     </AuthContext.Provider>
   );

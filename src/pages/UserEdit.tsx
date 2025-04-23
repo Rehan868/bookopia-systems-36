@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
-import { useUser } from '@/hooks/useUsers';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useUser, useUserRoles } from '@/hooks/useUsers';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Form, 
@@ -25,6 +25,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const userFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -34,8 +35,9 @@ const userFormSchema = z.object({
 });
 
 const UserEdit = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { data: user, isLoading, error } = useUser(id || '');
+  const { data: roles, isLoading: rolesLoading } = useUserRoles();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +54,7 @@ const UserEdit = () => {
   });
 
   // Update form values when user data is loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
       form.reset({
         name: user.name,
@@ -64,23 +66,35 @@ const UserEdit = () => {
   }, [user, form]);
 
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
+    if (!id) return;
+    
     try {
       setIsSubmitting(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update user profile in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: values.name,
+          email: values.email,
+          role: values.role,
+          avatar: values.avatar || null
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
       
       toast({
         title: "User Updated",
         description: "User has been updated successfully.",
       });
       
-      navigate(`/users/${id}`);
-    } catch (error) {
+      navigate(`/users`);
+    } catch (error: any) {
       console.error("Error updating user:", error);
       toast({
         title: "Error",
-        description: "Failed to update user. Please try again.",
+        description: error.message || "Failed to update user. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -88,12 +102,26 @@ const UserEdit = () => {
     }
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isLoading || rolesLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading...</span>
+      </div>
+    );
   }
 
   if (error || !user) {
-    return <div>Error loading user</div>;
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold text-red-500 mb-4">Error loading user</h2>
+        <p className="text-muted-foreground mb-6">Could not load user information</p>
+        <Button onClick={() => navigate('/users')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Users
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -135,9 +163,10 @@ const UserEdit = () => {
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
+                    <Input type="email" placeholder="Enter email address" {...field} disabled />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-sm text-muted-foreground">Email address cannot be changed. Contact administrator for assistance.</p>
                 </FormItem>
               )}
             />
@@ -155,9 +184,11 @@ const UserEdit = () => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Booking Agent">Booking Agent</SelectItem>
-                      <SelectItem value="Cleaning Staff">Cleaning Staff</SelectItem>
+                      {roles?.map(role => (
+                        <SelectItem key={role.name} value={role.name}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -180,11 +211,16 @@ const UserEdit = () => {
             />
             
             <div className="flex justify-end gap-3">
-              <Button variant="outline" type="button" onClick={() => navigate(`/users/${id}`)}>
+              <Button variant="outline" type="button" onClick={() => navigate(`/users`)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : "Save Changes"}
               </Button>
             </div>
           </form>

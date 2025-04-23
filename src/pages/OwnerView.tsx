@@ -1,17 +1,12 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileEdit, Building, DollarSign, Percent } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { useOwner } from '@/hooks/useOwners';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { OwnerRoomsList } from '@/components/owners/OwnerRoomsList';
 
 const OwnerView = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: owner, isLoading, error } = useOwner(id || '');
+  const { id } = useParams();
+  const ownerId = id ? parseInt(id, 10) : 0;
+  
+  const { data: owner, isLoading, error } = useOwner(ownerId);
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();

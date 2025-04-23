@@ -209,6 +209,39 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          name: string
+          subject: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name: string
+          subject: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -370,6 +403,45 @@ export type Database = {
           state?: string | null
           updated_at?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      invoice_templates: {
+        Row: {
+          created_at: string | null
+          footer: string | null
+          header: string | null
+          id: number
+          is_active: boolean | null
+          logo_path: string | null
+          name: string
+          template: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          footer?: string | null
+          header?: string | null
+          id?: number
+          is_active?: boolean | null
+          logo_path?: string | null
+          name: string
+          template: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          footer?: string | null
+          header?: string | null
+          id?: number
+          is_active?: boolean | null
+          logo_path?: string | null
+          name?: string
+          template?: string
+          updated_at?: string | null
+          variables?: Json | null
         }
         Relationships: []
       }
@@ -589,6 +661,41 @@ export type Database = {
           zip_code?: string
         }
         Relationships: []
+      }
+      property_settings: {
+        Row: {
+          created_at: string | null
+          id: number
+          property_id: number | null
+          setting_key: string
+          setting_value: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          property_id?: number | null
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          property_id?: number | null
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_images: {
         Row: {
