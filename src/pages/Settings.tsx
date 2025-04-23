@@ -27,10 +27,13 @@ import {
   Globe,
   Lock,
   Mail,
+  Plus,
   Save,
+  Shield,
   User,
   Users
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -74,7 +77,7 @@ const Settings = () => {
   const handleSaveUsers = () => {
     toast({
       title: "User Settings Saved",
-      description: "User access settings have been updated successfully.",
+      description: "User role settings have been updated successfully.",
     });
   };
   
@@ -357,11 +360,18 @@ const Settings = () => {
         
         <TabsContent value="property" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Property Management</CardTitle>
-              <CardDescription>
-                Configure your hotel properties and locations
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Property Management</CardTitle>
+                <CardDescription>
+                  Configure your hotel properties and locations
+                </CardDescription>
+              </div>
+              <Button asChild className="flex items-center gap-1">
+                <Link to="/settings/properties/add">
+                  <Plus className="h-4 w-4" /> Add New Property
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -383,7 +393,9 @@ const Settings = () => {
                         <td className="p-3">123 Oceanfront Dr, Miami, FL</td>
                         <td className="p-3">12</td>
                         <td className="p-3 text-right">
-                          <Button size="sm" variant="ghost">Edit</Button>
+                          <Button asChild size="sm" variant="ghost">
+                            <Link to="/settings/properties/marina/edit">Edit</Link>
+                          </Button>
                         </td>
                       </tr>
                       <tr className="border-t">
@@ -391,14 +403,14 @@ const Settings = () => {
                         <td className="p-3">456 Urban Ave, Miami, FL</td>
                         <td className="p-3">8</td>
                         <td className="p-3 text-right">
-                          <Button size="sm" variant="ghost">Edit</Button>
+                          <Button asChild size="sm" variant="ghost">
+                            <Link to="/settings/properties/downtown/edit">Edit</Link>
+                          </Button>
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-                
-                <Button>Add New Property</Button>
               </div>
               
               <Separator />
@@ -469,11 +481,18 @@ const Settings = () => {
           </Card>
           
           <Card>
-            <CardHeader>
-              <CardTitle>Room Types & Pricing</CardTitle>
-              <CardDescription>
-                Manage room categories and rate plans
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Room Types & Pricing</CardTitle>
+                <CardDescription>
+                  Manage room categories and rate plans
+                </CardDescription>
+              </div>
+              <Button asChild className="flex items-center gap-1">
+                <Link to="/settings/room-types/add">
+                  <Plus className="h-4 w-4" /> Add Room Type
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-md border overflow-hidden">
@@ -492,7 +511,9 @@ const Settings = () => {
                       <td className="p-3">$120</td>
                       <td className="p-3">2</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/room-types/1/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                     <tr className="border-t">
@@ -500,7 +521,9 @@ const Settings = () => {
                       <td className="p-3">$180</td>
                       <td className="p-3">3</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/room-types/2/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                     <tr className="border-t">
@@ -508,7 +531,9 @@ const Settings = () => {
                       <td className="p-3">$250</td>
                       <td className="p-3">4</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/room-types/3/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                     <tr className="border-t">
@@ -516,7 +541,9 @@ const Settings = () => {
                       <td className="p-3">$400</td>
                       <td className="p-3">4</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/room-types/4/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                   </tbody>
@@ -524,7 +551,6 @@ const Settings = () => {
               </div>
               
               <div className="flex gap-3">
-                <Button>Add Room Type</Button>
                 <Button variant="outline" className="flex items-center gap-2">
                   <BadgePercent className="h-4 w-4" />
                   Manage Rate Plans
@@ -549,32 +575,42 @@ const Settings = () => {
                   <div className="rounded-md border overflow-hidden divide-y">
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Booking Confirmation</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/email-templates/booking-confirmation">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Check-in Reminder</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/email-templates/check-in-reminder">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Check-out Reminder</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/email-templates/check-out-reminder">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Thank You</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/email-templates/thank-you">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Cancellation</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/email-templates/cancellation">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -585,20 +621,26 @@ const Settings = () => {
                   <div className="rounded-md border overflow-hidden divide-y">
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Booking Confirmation</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/sms-templates/booking-confirmation">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Check-in Reminder</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/sms-templates/check-in-reminder">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                     <div className="p-3 flex items-center justify-between hover:bg-muted/50">
                       <div className="font-medium">Check-out Reminder</div>
-                      <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                        Edit <ArrowRight className="h-3 w-3 ml-1" />
+                      <Button asChild size="sm" variant="ghost" className="flex items-center gap-1">
+                        <Link to="/settings/sms-templates/check-out-reminder">
+                          Edit <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -639,6 +681,26 @@ const Settings = () => {
                   <div className="border rounded-md p-3">
                     <code className="text-sm font-mono">{'{{room_number}}'}</code>
                     <p className="text-xs text-muted-foreground mt-1">Room number</p>
+                  </div>
+                  <div className="border rounded-md p-3">
+                    <code className="text-sm font-mono">{'{{property_name}}'}</code>
+                    <p className="text-xs text-muted-foreground mt-1">Property name</p>
+                  </div>
+                  <div className="border rounded-md p-3">
+                    <code className="text-sm font-mono">{'{{guest_count}}'}</code>
+                    <p className="text-xs text-muted-foreground mt-1">Number of guests</p>
+                  </div>
+                  <div className="border rounded-md p-3">
+                    <code className="text-sm font-mono">{'{{total_amount}}'}</code>
+                    <p className="text-xs text-muted-foreground mt-1">Total booking amount</p>
+                  </div>
+                  <div className="border rounded-md p-3">
+                    <code className="text-sm font-mono">{'{{payment_status}}'}</code>
+                    <p className="text-xs text-muted-foreground mt-1">Payment status</p>
+                  </div>
+                  <div className="border rounded-md p-3">
+                    <code className="text-sm font-mono">{'{{special_requests}}'}</code>
+                    <p className="text-xs text-muted-foreground mt-1">Guest's special requests</p>
                   </div>
                 </div>
               </div>
@@ -749,11 +811,18 @@ const Settings = () => {
         
         <TabsContent value="users" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts and access permissions
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>User Role Management</CardTitle>
+                <CardDescription>
+                  Manage user roles and access permissions
+                </CardDescription>
+              </div>
+              <Button asChild className="flex items-center gap-1">
+                <Link to="/settings/user-roles/add">
+                  <Plus className="h-4 w-4" /> Add New User Role
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-md border overflow-hidden">
@@ -761,9 +830,8 @@ const Settings = () => {
                   <thead className="bg-muted">
                     <tr>
                       <th className="text-left font-medium p-3">Name</th>
-                      <th className="text-left font-medium p-3">Email</th>
-                      <th className="text-left font-medium p-3">Role</th>
-                      <th className="text-left font-medium p-3">Status</th>
+                      <th className="text-left font-medium p-3">Description</th>
+                      <th className="text-left font-medium p-3">Users</th>
                       <th className="text-right font-medium p-3">Actions</th>
                     </tr>
                   </thead>
@@ -772,61 +840,56 @@ const Settings = () => {
                       <td className="p-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <User className="h-4 w-4" />
+                            <Shield className="h-4 w-4" />
                           </div>
-                          <span className="font-medium">John Doe</span>
+                          <span className="font-medium">Administrator</span>
                         </div>
                       </td>
-                      <td className="p-3">john@example.com</td>
-                      <td className="p-3">Administrator</td>
-                      <td className="p-3">
-                        <Badge className="bg-green-100 text-green-800">Active</Badge>
-                      </td>
+                      <td className="p-3">Full system access with all permissions</td>
+                      <td className="p-3">1</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/user-roles/administrator/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                     <tr className="border-t">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <User className="h-4 w-4" />
+                            <Shield className="h-4 w-4" />
                           </div>
-                          <span className="font-medium">Jane Smith</span>
+                          <span className="font-medium">Manager</span>
                         </div>
                       </td>
-                      <td className="p-3">jane@example.com</td>
-                      <td className="p-3">Manager</td>
-                      <td className="p-3">
-                        <Badge className="bg-green-100 text-green-800">Active</Badge>
-                      </td>
+                      <td className="p-3">Property management with limited system settings access</td>
+                      <td className="p-3">1</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/user-roles/manager/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                     <tr className="border-t">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <User className="h-4 w-4" />
+                            <Shield className="h-4 w-4" />
                           </div>
-                          <span className="font-medium">Robert Wilson</span>
+                          <span className="font-medium">Staff</span>
                         </div>
                       </td>
-                      <td className="p-3">robert@example.com</td>
-                      <td className="p-3">Staff</td>
-                      <td className="p-3">
-                        <Badge className="bg-red-100 text-red-800">Inactive</Badge>
-                      </td>
+                      <td className="p-3">Front desk operations with limited management access</td>
+                      <td className="p-3">1</td>
                       <td className="p-3 text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/settings/user-roles/staff/edit">Edit</Link>
+                        </Button>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              
-              <Button>Add New User</Button>
             </CardContent>
           </Card>
           
