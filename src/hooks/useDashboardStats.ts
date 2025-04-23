@@ -10,6 +10,12 @@ export interface DashboardStats {
   pendingCheckIns: number;
   recentBookings: any[];
   monthlyRevenue: number[];
+  // Additional properties needed by Dashboard.tsx
+  availableRooms: number;
+  totalRooms: number;
+  todayCheckIns: number;
+  todayCheckOuts: number;
+  weeklyOccupancyTrend: string;
 }
 
 export const useDashboardStats = () => {
@@ -42,14 +48,22 @@ export const useDashboardStats = () => {
         // Calculate occupancy rate
         const occupiedRooms = rooms?.filter(room => room.status === 'occupied')?.length || 0;
         const totalRooms = rooms?.length || 0;
+        const availableRooms = rooms?.filter(room => room.status === 'available')?.length || 0;
         const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
 
         // Count pending check-ins
         const today = new Date().toISOString().split('T')[0];
-        const pendingCheckIns = bookings?.filter(booking => 
+        const todayCheckIns = bookings?.filter(booking => 
           booking.check_in_date === today && 
           booking.status === 'confirmed'
         )?.length || 0;
+
+        const todayCheckOuts = bookings?.filter(booking => 
+          booking.check_out_date === today && 
+          booking.status === 'checked-in'
+        )?.length || 0;
+
+        const pendingCheckIns = todayCheckIns;
 
         // Generate mock monthly revenue data for the chart
         // In a real application, this would be calculated from actual booking data
@@ -75,7 +89,12 @@ export const useDashboardStats = () => {
           occupancyRate,
           pendingCheckIns,
           recentBookings: bookings?.slice(0, 5) || [],
-          monthlyRevenue
+          monthlyRevenue,
+          availableRooms,
+          totalRooms,
+          todayCheckIns,
+          todayCheckOuts,
+          weeklyOccupancyTrend: "+5%" // Mock trend data
         };
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);

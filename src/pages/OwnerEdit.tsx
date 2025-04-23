@@ -22,7 +22,8 @@ import * as z from 'zod';
 import { OwnerRoomsList } from '@/components/owners/OwnerRoomsList';
 
 const ownerFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   phone: z.string().optional(),
   properties: z.coerce.number().min(0, { message: "Properties cannot be negative" }),
@@ -45,7 +46,8 @@ const OwnerEdit = () => {
   const form = useForm({
     resolver: zodResolver(ownerFormSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
       properties: 0,
@@ -63,12 +65,13 @@ const OwnerEdit = () => {
   React.useEffect(() => {
     if (owner) {
       form.reset({
-        name: owner.name,
-        email: owner.email,
+        firstName: owner.first_name || '',
+        lastName: owner.last_name || '',
+        email: owner.email || '',
         phone: owner.phone || '',
-        properties: owner.properties,
-        revenue: owner.revenue,
-        occupancy: owner.occupancy,
+        properties: owner.properties || 0,
+        revenue: owner.revenue || 0,
+        occupancy: owner.occupancy || 0,
         avatar: owner.avatar || '',
         joinedDate: owner.joinedDate || '',
         bankName: owner.paymentDetails?.bank || '',
@@ -182,12 +185,26 @@ const OwnerEdit = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
+                    <Input placeholder="Enter first name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter last name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

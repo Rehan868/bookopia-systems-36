@@ -13,12 +13,8 @@ const OwnerView = () => {
   const { id } = useParams<{ id: string }>();
   const { data: owner, isLoading, error } = useOwner(id || '');
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
   const formatCurrency = (amount: number) => {
@@ -119,7 +115,7 @@ const OwnerView = () => {
           </div>
         </div>
         <Button asChild>
-          <Link to={`/owners/edit/${owner.id}`}>
+          <Link to={`/owners/edit/${owner?.id}`}>
             <FileEdit className="h-4 w-4 mr-2" />
             Edit Owner
           </Link>
@@ -134,12 +130,12 @@ const OwnerView = () => {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={owner.avatar || undefined} />
-                <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
+                <AvatarImage src={owner?.avatar || undefined} />
+                <AvatarFallback>{getInitials(owner?.first_name || '', owner?.last_name || '')}</AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-semibold">{owner.name}</h2>
-                <p className="text-muted-foreground">{owner.email}</p>
+                <h2 className="text-2xl font-semibold">{owner?.first_name} {owner?.last_name}</h2>
+                <p className="text-muted-foreground">{owner?.email}</p>
               </div>
             </div>
             
@@ -148,14 +144,14 @@ const OwnerView = () => {
                 <p className="text-sm text-muted-foreground">Properties</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Building className="h-4 w-4 text-muted-foreground" />
-                  <span>{owner.properties} Properties</span>
+                  <span>{owner?.properties} Properties</span>
                 </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Average Occupancy</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Percent className="h-4 w-4 text-muted-foreground" />
-                  <span>{owner.occupancy}%</span>
+                  <span>{owner?.occupancy}%</span>
                 </div>
               </div>
             </div>
@@ -169,19 +165,19 @@ const OwnerView = () => {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue (YTD)</p>
-              <p className="font-medium">{formatCurrency(owner.revenue)}</p>
+              <p className="font-medium">{formatCurrency(owner?.revenue || 0)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Contact Number</p>
-              <p className="font-medium">{owner.phone || 'Not provided'}</p>
+              <p className="font-medium">{owner?.phone || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Payment Details</p>
-              <p className="font-medium">{owner.paymentDetails?.bank || 'Not provided'}</p>
+              <p className="font-medium">{owner?.paymentDetails?.bank || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Joined Date</p>
-              <p className="font-medium">{owner.joinedDate}</p>
+              <p className="font-medium">{owner?.joinedDate}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Payment Status</p>
@@ -193,7 +189,7 @@ const OwnerView = () => {
         </Card>
       </div>
 
-      <OwnerRoomsList ownerId={owner.id} />
+      <OwnerRoomsList ownerId={owner?.id || ''} />
     </div>
   );
 };
