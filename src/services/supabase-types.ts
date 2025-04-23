@@ -1,3 +1,4 @@
+
 import { Json } from '@/integrations/supabase/database.types';
 
 // Entity Types
@@ -31,6 +32,7 @@ export interface Booking {
   created_by?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  // Renamed fields to match database schema
   amount_paid?: number | null;
   remaining_amount?: number | null;
   guest_email?: string | null;
@@ -40,6 +42,17 @@ export interface Booking {
   tourism_fee?: number | null;
   net_to_owner?: number | null;
   security_deposit?: number | null;
+  // Aliases for backward compatibility with component usage
+  guestEmail?: string | null;
+  guestPhone?: string | null;
+  guestDocument?: string | null;
+  baseRate?: number | null;
+  securityDeposit?: number | null;
+  tourismFee?: number | null;
+  netToOwner?: number | null;
+  amountPaid?: number | null;
+  remainingAmount?: number | null;
+  notes?: string | null;
   rooms?: Room;
   property?: Property;
 }
@@ -59,6 +72,9 @@ export interface Room {
   features?: Json | null;
   created_at?: string | null;
   updated_at?: string | null;
+  // Field for backward compatibility
+  name?: string;
+  property?: string;
   room_types?: RoomType;
   properties?: Property;
 }
@@ -116,6 +132,13 @@ export interface Owner {
   payment_info?: Json | null;
   created_at?: string | null;
   updated_at?: string | null;
+  // Fields for backward compatibility
+  properties?: any[];
+  revenue?: number;
+  occupancy?: number;
+  avatar?: string;
+  joinedDate?: string;
+  paymentDetails?: any;
 }
 
 export interface PropertyOwnership {
@@ -191,6 +214,10 @@ export interface DashboardStats {
   occupiedRooms: number;
   todayCheckins: number;
   todayCheckouts: number;
+  // Aliases for backward compatibility
+  todayCheckIns?: number;
+  todayCheckOuts?: number;
+  weeklyOccupancyTrend?: number[];
   revenue: {
     today: number;
     thisWeek: number;

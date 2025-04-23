@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from 'react';
-import { fetchBookings, fetchBookingById, fetchTodayCheckins, fetchTodayCheckouts, create, update, remove } from '../services/api';
+import { fetchBookings, fetchBookingById, fetchTodayCheckins, fetchTodayCheckouts, create, update, remove, createAuditLog } from '../services/api';
 import { Booking } from '../services/supabase-types';
-import { createAuditLog } from '../services/api';
 
 export function useBookings() {
   const [data, setData] = useState<Booking[] | null>(null);

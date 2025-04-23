@@ -1,12 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
 
-// Get environment variables for Supabase connection
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-// Initialize Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+// Re-export the supabase client from client.ts where the URL and key are hardcoded
+export { supabase } from './client';
 
 // Error handling helper
 export function handleError(error: any): string {

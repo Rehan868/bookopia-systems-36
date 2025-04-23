@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase';
 import { Room, Booking, CleaningTask } from '../services/supabase-types';
@@ -81,7 +82,23 @@ export function useOwnerDashboard() {
           .in('id', roomIds);
           
         if (roomsError) throw roomsError;
-        setRooms(roomsData || []);
+        
+        // Transform to match the Room interface
+        const transformedRooms = roomsData?.map(room => {
+          return {
+            ...room,
+            property: room.properties?.name,
+            name: room.number, // Using number as name for backward compatibility
+            room_types: {
+              id: '',
+              name: room.room_types?.name || '',
+              base_rate: room.room_types?.base_rate || 0,
+              max_occupancy: 0
+            }
+          } as unknown as Room;
+        }) || [];
+        
+        setRooms(transformedRooms);
         
         // Step 4: Get bookings for these rooms
         const { data: bookingsData, error: bookingsError } = await supabase
@@ -91,7 +108,19 @@ export function useOwnerDashboard() {
           .order('check_in', { ascending: true });
           
         if (bookingsError) throw bookingsError;
-        setBookings(bookingsData || []);
+        
+        // Transform to match the Booking interface
+        const transformedBookings = bookingsData?.map(booking => {
+          return {
+            ...booking,
+            adults: booking.adults || 2,
+            children: booking.children || 0,
+            netToOwner: booking.net_to_owner || 0, // For backward compatibility
+            notes: booking.special_requests
+          } as unknown as Booking;
+        }) || [];
+        
+        setBookings(transformedBookings);
         
         // Step 5: Get cleaning tasks for these rooms
         const { data: tasksData, error: tasksError } = await supabase
@@ -101,7 +130,24 @@ export function useOwnerDashboard() {
           .order('date', { ascending: false });
           
         if (tasksError) throw tasksError;
-        setCleaningTasks(tasksData || []);
+        
+        // Transform to match the CleaningTask interface
+        const transformedTasks = tasksData?.map(task => {
+          return {
+            ...task,
+            rooms: {
+              id: task.room_id,
+              number: task.rooms?.number || '',
+              floor: task.rooms?.floor || '',
+              type: task.rooms?.type || '',
+              capacity: 0,
+              rate: 0,
+              status: ''
+            } as Room
+          } as unknown as CleaningTask;
+        }) || [];
+        
+        setCleaningTasks(transformedTasks);
         
         // Step 6: Calculate dashboard statistics
         const availableRooms = roomsData?.filter(room => room.status === 'available').length || 0;
@@ -133,8 +179,7 @@ export function useOwnerDashboard() {
           if (
             checkOutDate.getMonth() === currentMonth && 
             checkOutDate.getFullYear() === currentYear && 
-            booking.status === 'checked-out' &&
-            booking.net_to_owner
+            booking.status === 'checked-out'
           ) {
             return sum + (booking.net_to_owner || 0);
           }
@@ -145,8 +190,7 @@ export function useOwnerDashboard() {
           const checkOutDate = new Date(booking.check_out);
           if (
             checkOutDate.getFullYear() === currentYear && 
-            booking.status === 'checked-out' &&
-            booking.net_to_owner
+            booking.status === 'checked-out'
           ) {
             return sum + (booking.net_to_owner || 0);
           }
