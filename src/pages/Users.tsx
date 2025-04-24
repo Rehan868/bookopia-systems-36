@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,13 +39,11 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState<string>(searchParams.get('role') || "all");
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   
-  // Apply filters when values change or when data loads
   useEffect(() => {
     if (!allUsers) return;
     
     let filtered = [...allUsers];
     
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,14 +51,12 @@ const Users = () => {
       );
     }
     
-    // Apply role filter
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
     
     setFilteredUsers(filtered);
     
-    // Update URL with filters
     const params = new URLSearchParams();
     if (searchQuery) params.set('q', searchQuery);
     if (roleFilter !== 'all') params.set('role', roleFilter);

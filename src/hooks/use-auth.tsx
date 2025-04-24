@@ -40,18 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession?.user) {
           setIsAuthenticated(true);
           
-          // Fetch the user profile from our profiles table
+          // Fetch the user profile from our users table
           try {
             setTimeout(async () => {
               const { data: profile } = await supabase
-                .from('profiles')
+                .from('users')
                 .select('*')
-                .eq('id', currentSession.user.id)
+                .eq('id', parseInt(currentSession.user.id))
                 .single();
               
               if (profile) {
                 setUser({
-                  id: profile.id,
+                  id: profile.id.toString(),
                   name: profile.name,
                   email: profile.email,
                   role: profile.role,
@@ -81,14 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // Fetch user profile
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('users')
             .select('*')
-            .eq('id', currentSession.user.id)
+            .eq('id', parseInt(currentSession.user.id))
             .single();
           
           if (profile) {
             setUser({
-              id: profile.id,
+              id: profile.id.toString(),
               name: profile.name,
               email: profile.email,
               role: profile.role,
@@ -149,9 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Check if user has owner role
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('users')
         .select('role')
-        .eq('id', data.user.id)
+        .eq('id', parseInt(data.user.id))
         .single();
       
       if (profile?.role !== 'owner') {

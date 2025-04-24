@@ -73,14 +73,14 @@ const UserEdit = () => {
       
       // Update user profile in the database
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
           name: values.name,
           email: values.email,
           role: values.role,
           avatar: values.avatar || null
         })
-        .eq('id', id);
+        .eq('id', parseInt(id));
       
       if (error) throw error;
       

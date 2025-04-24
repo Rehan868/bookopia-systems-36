@@ -16,7 +16,7 @@ export const useUsers = () => {
     queryKey: ["users"],
     queryFn: async (): Promise<User[]> => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, name, email, role, avatar')
         .order('name');
       
@@ -25,7 +25,10 @@ export const useUsers = () => {
         throw error;
       }
       
-      return data as User[];
+      return data.map((user: any) => ({
+        ...user,
+        id: user.id.toString()
+      })) as User[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -38,9 +41,9 @@ export const useUser = (id: string) => {
       if (!id) throw new Error('User ID is required');
       
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, name, email, role, avatar')
-        .eq('id', id)
+        .eq('id', parseInt(id))
         .single();
       
       if (error) {
@@ -52,7 +55,10 @@ export const useUser = (id: string) => {
         throw new Error(`User with ID ${id} not found`);
       }
       
-      return data as User;
+      return {
+        ...data,
+        id: data.id.toString()
+      } as User;
     },
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -65,8 +71,19 @@ export const useDeleteUser = () => {
   
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // First delete the user's auth account
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
       
+      if (authError) {
+        throw authError;
+      }
+      
+      // Then delete the user's profile
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', parseInt(userId));
+        
       if (error) {
         throw error;
       }
