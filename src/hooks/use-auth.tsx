@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: profile } = await supabase
         .from('users')
         .select('role')
-        .eq('id', data.user.id)
+        .eq('id', parseInt(data.user.id))
         .single();
       
       if (profile?.role === 'owner') {
