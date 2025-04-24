@@ -1,16 +1,15 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
-export type User = {
+interface User {
   id: string;
   name: string;
   email: string;
   role: string;
   avatar?: string;
-  lastActive?: string; // Add this property to fix the error in UserView
-};
+  lastActive?: string;
+}
 
 export const useUsers = () => {
   return useQuery({
@@ -29,7 +28,7 @@ export const useUsers = () => {
       return data.map((user: any) => ({
         ...user,
         id: user.id.toString(),
-        lastActive: user.last_active // Map from snake_case to camelCase
+        lastActive: user.last_active
       })) as User[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes

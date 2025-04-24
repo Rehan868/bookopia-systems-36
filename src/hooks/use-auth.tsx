@@ -105,7 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // Clean up the subscription
     return () => {
       subscription.unsubscribe();
     };
@@ -120,10 +119,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      toast({
-        title: "Login successful",
-        description: "You have been logged in successfully"
-      });
+      // Get user role and redirect accordingly
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profile?.role === 'owner') {
+        toast({
+          title: "Owner login successful",
+          description: "You have been logged in as an owner"
+        });
+      } else {
+        toast({
+          title: "Login successful",
+          description: "You have been logged in successfully"
+        });
+      }
       
       return;
     } catch (error: any) {
