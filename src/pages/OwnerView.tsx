@@ -1,6 +1,13 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useOwner } from '@/hooks/useOwners';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, FileEdit, Building, Percent } from 'lucide-react';
+import { OwnerRoomsList } from '@/components/owners/OwnerRoomsList';
 
 const OwnerView = () => {
   const { id } = useParams();

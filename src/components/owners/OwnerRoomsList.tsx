@@ -12,7 +12,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { rooms, ownerRooms } from '@/lib/mock-data';
 
 interface OwnerRoomsListProps {
   ownerId: string;
@@ -21,21 +20,18 @@ interface OwnerRoomsListProps {
 
 export const OwnerRoomsList = ({ ownerId, isEditing = false }: OwnerRoomsListProps) => {
   const { toast } = useToast();
-  const [ownerRoomsList, setOwnerRoomsList] = useState(
-    ownerRooms.filter(or => or.ownerId === ownerId)
-  );
+  const [ownerRoomsList, setOwnerRoomsList] = useState<any[]>([]);
 
-  const ownerRoomDetails = ownerRoomsList.map(or => {
-    const room = rooms.find(r => r.id === or.roomId);
-    return {
-      ...or,
-      roomDetails: room
-    };
-  });
+  // Mock data for rooms would ideally come from a proper API call
+  const ownerRoomDetails = ownerRoomsList.map(or => ({
+    ...or,
+    roomDetails: { number: "101", property: "Sample Property", type: "Standard", status: "Available" }
+  }));
 
-  const availableRooms = rooms.filter(
-    room => !ownerRooms.some(or => or.roomId === room.id && or.ownerId === ownerId)
-  );
+  const availableRooms = [
+    { id: "r1", number: "102", property: "Sample Property" },
+    { id: "r2", number: "103", property: "Sample Property" }
+  ];
 
   const handleAddRoom = (roomId: string) => {
     const newOwnerRoom = {

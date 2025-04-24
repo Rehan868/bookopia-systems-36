@@ -9,6 +9,7 @@ export type User = {
   email: string;
   role: string;
   avatar?: string;
+  lastActive?: string; // Add this property to fix the error in UserView
 };
 
 export const useUsers = () => {
@@ -17,7 +18,7 @@ export const useUsers = () => {
     queryFn: async (): Promise<User[]> => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role, avatar')
+        .select('id, name, email, role, avatar, last_active')
         .order('name');
       
       if (error) {
@@ -27,7 +28,8 @@ export const useUsers = () => {
       
       return data.map((user: any) => ({
         ...user,
-        id: user.id.toString()
+        id: user.id.toString(),
+        lastActive: user.last_active // Map from snake_case to camelCase
       })) as User[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes

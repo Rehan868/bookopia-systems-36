@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,6 @@ const UserAdd = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch available roles from database
   useEffect(() => {
     const fetchRoles = async () => {
       setIsLoading(true);
@@ -103,7 +101,6 @@ const UserAdd = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -116,7 +113,6 @@ const UserAdd = () => {
     setIsSubmitting(true);
     
     try {
-      // Register the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
@@ -128,21 +124,19 @@ const UserAdd = () => {
       
       if (authError) throw authError;
       
-      // Update the user's role in the profiles table
       if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
+        const { error: userError } = await supabase
+          .from('users')
           .update({ 
-            role: formData.role
+            role: formData.role,
+            name: formData.name
           })
-          .eq('id', authData.user.id);
+          .eq('id', parseInt(authData.user.id));
         
-        if (profileError) throw profileError;
+        if (userError) throw userError;
       }
       
-      // If sendInvite is true, send an invitation email
       if (formData.sendInvite) {
-        // This would be handled by a server function in a real app
         console.log('Sending invitation email to', formData.email);
       }
       

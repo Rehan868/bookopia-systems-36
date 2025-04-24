@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { useOwner } from '@/hooks/useOwners';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Form, 
   FormControl, 
@@ -24,6 +25,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { OwnerRoomsList } from '@/components/owners/OwnerRoomsList';
 
 const ownerFormSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
